@@ -74,4 +74,22 @@ public class ChessPiece {
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
         return new ArrayList<>();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ChessPiece that = (ChessPiece) o;
+
+        if (type != that.type) return false;
+        return pieceColor == that.pieceColor;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = type != null ? type.hashCode() : 0;
+        result = 31 * result + (pieceColor != null ? pieceColor.hashCode() : 0);
+        return result;
+    }
 }
