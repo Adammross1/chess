@@ -55,9 +55,13 @@ public class ChessBoardTests extends EqualsTestingUtility<ChessBoard> {
     @DisplayName("Reset Board")
     public void defaultGameBoard() {
         var expectedBoard = TestUtilities.defaultBoard();
+        System.out.println("Expected Board:");
+        System.out.println(expectedBoard);
 
         var actualBoard = new ChessBoard();
         actualBoard.resetBoard();
+        System.out.println("Actual Board:");
+        System.out.println(actualBoard);
 
         Assertions.assertEquals(expectedBoard, actualBoard, "Reset board did not create the correct board");
     }
