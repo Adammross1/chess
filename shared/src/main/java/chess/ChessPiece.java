@@ -1,5 +1,8 @@
 package chess;
 
+import chess.calculators.*;
+
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -8,9 +11,31 @@ import java.util.Collection;
  * Note: You can add to this class, but you may not alter
  * signature of the existing methods.
  */
+
 public class ChessPiece {
 
+    private final ChessGame.TeamColor pieceColor;
+    private final PieceType type;
+    private final PieceMovesCalculator calculator;
+
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
+        this.pieceColor = pieceColor;
+        this.type = type;
+        this.calculator = createCalculator(type);
+    }
+
+    private PieceMovesCalculator createCalculator(PieceType type) {
+        return switch (type) {
+            case PAWN -> new PawnMovesCalculator();
+            case KNIGHT -> new KnightMovesCalculator();
+            case BISHOP -> new BishopMovesCalculator();
+            case ROOK -> new RookMovesCalculator();
+            case QUEEN -> new QueenMovesCalculator();
+            case KING -> new KingMovesCalculator();
+
+
+            default -> ((board, position) -> new ArrayList<>());
+        };
     }
 
     /**
@@ -29,14 +54,14 @@ public class ChessPiece {
      * @return Which team this chess piece belongs to
      */
     public ChessGame.TeamColor getTeamColor() {
-        throw new RuntimeException("Not implemented");
+        return pieceColor;
     }
 
     /**
      * @return which type of chess piece this piece is
      */
     public PieceType getPieceType() {
-        throw new RuntimeException("Not implemented");
+        return type;
     }
 
     /**
@@ -47,6 +72,6 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        throw new RuntimeException("Not implemented");
+        return new ArrayList<>();
     }
 }

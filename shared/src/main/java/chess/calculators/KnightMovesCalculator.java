@@ -1,0 +1,41 @@
+package chess.calculators;
+
+import chess.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+public class KnightMovesCalculator implements PieceMovesCalculator {
+    @Override
+    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
+        Collection<ChessMove> moves = new ArrayList<>();
+        ChessPiece knight = board.getPiece(position);
+        if (knight == null || knight.getPieceType() != ChessPiece.PieceType.KNIGHT) return moves;
+
+        int row = position.getRow();
+        int col = position.getColumn();
+
+        record Direction(int rowOffset, int colOffset) {}
+
+        Direction[] knightMoves = {
+                new Direction(2, 1),
+                new Direction(1, 2),
+                new Direction(-1, 2),
+                new Direction(-2, 1),
+                new Direction(-2, -1),
+                new Direction(-1, -2),
+                new Direction(1, -2),
+                new Direction(2, -1)
+        };
+
+        for (Direction d : knightMoves) {
+            ChessPosition newPos = new ChessPosition(row + d.rowOffset, col + d.colOffset);
+            ChessPiece target = board.getPiece(newPos);
+            if (target == null || target.getTeamColor() != knight.getTeamColor()) {
+                moves.add(new ChessMove(position, newPos, null));
+            }
+        }
+
+        return moves;
+    }
+}
