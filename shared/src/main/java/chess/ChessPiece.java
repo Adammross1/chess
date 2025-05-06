@@ -4,6 +4,7 @@ import chess.calculators.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Represents a single chess piece
@@ -77,19 +78,14 @@ public class ChessPiece {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ChessPiece that = (ChessPiece) o;
-
-        if (type != that.type) return false;
-        return pieceColor == that.pieceColor;
+        if (!(o instanceof ChessPiece that)) {
+            return false;
+        }
+        return pieceColor == that.pieceColor && type == that.type;
     }
 
     @Override
     public int hashCode() {
-        int result = type != null ? type.hashCode() : 0;
-        result = 31 * result + (pieceColor != null ? pieceColor.hashCode() : 0);
-        return result;
+        return Objects.hash(pieceColor, type);
     }
 }
