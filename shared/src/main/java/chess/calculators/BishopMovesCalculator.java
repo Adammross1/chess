@@ -48,4 +48,9 @@ public class BishopMovesCalculator implements PieceMovesCalculator {
 
         return moves;
     }
+
+    @Override
+    public String toString() {
+        return "BishopMovesCalculator{}";
+    }
 }

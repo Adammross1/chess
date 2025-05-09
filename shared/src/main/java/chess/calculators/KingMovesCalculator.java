@@ -29,13 +29,25 @@ public class KingMovesCalculator implements PieceMovesCalculator {
         };
 
         for (Direction d : kingMoves) {
-            ChessPosition newPos = new ChessPosition(row + d.rowOffset(), col + d.colOffset());
-            ChessPiece target = board.getPiece(newPos);
-            if (target == null || target.getTeamColor() != king.getTeamColor()) {
-                moves.add(new ChessMove(position, newPos, null));
+            int newRow = row + d.rowOffset;
+            int newCol = col + d.colOffset;
+            if (newRow >= 1 && newRow <= 8 && newCol >= 1 && newCol <=8) {
+                ChessPosition newPos = new ChessPosition(newRow, newCol);
+                ChessPiece target = board.getPiece(newPos);
+                if (target == null || target.getTeamColor() != king.getTeamColor()) {
+                    moves.add(new ChessMove(position, newPos, null));
+                }
             }
         }
 
+        for (ChessMove move : moves) {
+            System.out.printf("From (%d, %d) to (%d, %d)%n",
+                    move.getStartPosition().getRow(),
+                    move.getStartPosition().getColumn(),
+                    move.getEndPosition().getRow(),
+                    move.getEndPosition().getColumn());
+        }
         return moves;
     }
+
 }

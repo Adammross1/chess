@@ -15,8 +15,8 @@ public class ChessPosition {
 
     public ChessPosition(int row, int col) {
         // Subtract one to transform 1-based indexing in tests to 0-based
-        this.row = row - 1;
-        this.col = col - 1;
+        this.row = row;
+        this.col = col;
     }
 
     /**

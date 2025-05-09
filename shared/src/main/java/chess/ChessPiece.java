@@ -73,7 +73,14 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        return new ArrayList<>();
+        ChessPiece piece = board.getPiece(myPosition);
+        if (piece == null) {
+            return new ArrayList<>();
+        }
+
+        PieceMovesCalculator calculator = createCalculator(piece.getPieceType());
+
+        return calculator.pieceMoves(board, myPosition);
     }
 
     @Override
