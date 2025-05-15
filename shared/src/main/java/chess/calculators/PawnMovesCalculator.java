@@ -46,7 +46,7 @@ public class PawnMovesCalculator implements PieceMovesCalculator {
                 }
             }
 
-// Capture left
+            // Capture left
             if (col - 1 >= 1) {
                 ChessPosition diagLeft = new ChessPosition(row + direction, col - 1);
                 ChessPiece target1 = board.getPiece(diagLeft);
