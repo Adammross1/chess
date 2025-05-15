@@ -169,18 +169,7 @@ public class ChessGame {
         return false;
     }
 
-    /**
-     * Determines if the given team is in checkmate
-     *
-     * @param teamColor which team to check for checkmate
-     * @return True if the specified team is in checkmate
-     */
-    public boolean isInCheckmate(TeamColor teamColor) {
-        boolean inCheck = isInCheck(teamColor);
-        if (!inCheck) {
-            return false;
-        }
-
+    private boolean hasNoValidMoves(TeamColor teamColor) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
@@ -199,6 +188,21 @@ public class ChessGame {
     }
 
     /**
+     * Determines if the given team is in checkmate
+     *
+     * @param teamColor which team to check for checkmate
+     * @return True if the specified team is in checkmate
+     */
+    public boolean isInCheckmate(TeamColor teamColor) {
+        boolean inCheck = isInCheck(teamColor);
+        if (!inCheck) {
+            return false;
+        }
+
+        return hasNoValidMoves(teamColor);
+    }
+
+    /**
      * Determines if the given team is in stalemate, which here is defined as having
      * no valid moves
      *
@@ -206,7 +210,12 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
+        boolean inCheck = isInCheck(teamColor);
+        if (inCheck) {
+            return false;
+        }
 
+        return hasNoValidMoves(teamColor);
     }
 
     /**
@@ -226,4 +235,6 @@ public class ChessGame {
     public ChessBoard getBoard() {
         return this.board;
     }
+
+
 }
