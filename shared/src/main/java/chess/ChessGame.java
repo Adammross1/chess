@@ -43,6 +43,21 @@ public class ChessGame {
         BLACK
     }
 
+    private boolean isValidMove(ChessMove move) {
+        ChessPiece movingPiece = board.getPiece(move.getStartPosition());
+        ChessPiece target = board.getPiece(move.getEndPosition());
+
+        board.addPiece(move.getStartPosition(), null);
+        board.addPiece(move.getEndPosition(), movingPiece);
+
+        boolean validMove = !isInCheck(movingPiece.getTeamColor());
+
+        board.addPiece(move.getStartPosition(), movingPiece);
+        board.addPiece(move.getEndPosition(), target);
+
+        return validMove;
+    }
+
     /**
      * Gets a valid moves for a piece at the given location
      *
@@ -51,7 +66,22 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
+        ChessPiece piece = board.getPiece(startPosition);
 
+        if (piece == null) {
+            return null;
+        }
+
+        Collection<ChessMove> possibleMoves = piece.pieceMoves(board, startPosition);
+        Collection<ChessMove> validMoves = new ArrayList<>();
+
+        for (ChessMove move : possibleMoves) {
+            if (isValidMove(move)) {
+                validMoves.add(move);
+            }
+        }
+
+        return validMoves;
     }
 
     /**
