@@ -158,7 +158,7 @@ public class ChessGame {
                     Collection<ChessMove> moves = piece.pieceMoves(board, position);
 
                     for (ChessMove move : moves) {
-                        if (move.getEndPosition() == kingPosition) {
+                        if (move.getEndPosition().equals(kingPosition)) {
                             return true;
                         }
                     }
