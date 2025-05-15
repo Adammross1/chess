@@ -136,7 +136,6 @@ public class ChessGame {
                 }
             }
         }
-
         return kingPosition;
     }
 
