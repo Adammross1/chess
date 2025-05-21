@@ -11,7 +11,7 @@ public class MemoryUserDAO implements UserDAO {
     private final Map<String, UserData> users = new HashMap<>();
 
     @Override
-    public void clear() throws DataAccessException {
+    public void clear() {
         users.clear();
     }
 
@@ -24,7 +24,7 @@ public class MemoryUserDAO implements UserDAO {
     }
 
     @Override
-    public UserData getUser(String username) throws DataAccessException {
+    public UserData getUser(String username) {
         return users.get(username);
     }
 }
