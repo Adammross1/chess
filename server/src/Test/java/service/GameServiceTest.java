@@ -34,7 +34,7 @@ public class GameServiceTest {
 
     @Test
     public void listGamesPositive() throws DataAccessException {
-        CreateGameRequest createRequest = new CreateGameRequest("Test Game", validAuthToken);
+        CreateGameRequest createRequest = new CreateGameRequest(validAuthToken, "Test Game");
         gameService.createGame(createRequest);
 
         ListGamesRequest listRequest = new ListGamesRequest(validAuthToken);
@@ -43,7 +43,7 @@ public class GameServiceTest {
         assertNotNull(result.games());
         assertFalse(result.games().isEmpty());
         assertEquals(1, result.games().size());
-        assertEquals("Test Game", result.games().getFirst().gameName());
+        assertEquals("Test Game", result.games().get(0).gameName());
     }
 
     @Test
@@ -60,15 +60,20 @@ public class GameServiceTest {
 
     @Test
     public void createGamePositive() throws DataAccessException {
-        CreateGameRequest request = new CreateGameRequest("Test Game", validAuthToken);
+        CreateGameRequest request = new CreateGameRequest(validAuthToken, "Test Game");
         CreateGameResult result = gameService.createGame(request);
 
         assertTrue(result.gameID() > 0);
+        
+        ListGamesRequest listRequest = new ListGamesRequest(validAuthToken);
+        ListGamesResult listResult = gameService.listGames(listRequest);
+        assertEquals(1, listResult.games().size());
+        assertEquals("Test Game", listResult.games().get(0).gameName());
     }
 
     @Test
     public void createGameNegative() {
-        CreateGameRequest request = new CreateGameRequest("Test Game", "invalid-token");
+        CreateGameRequest request = new CreateGameRequest("invalid-token", "Test Game");
 
         try {
             gameService.createGame(request);
@@ -80,25 +85,25 @@ public class GameServiceTest {
 
     @Test
     public void joinGamePositive() throws DataAccessException {
-        CreateGameRequest createRequest = new CreateGameRequest("Test Game", validAuthToken);
+        CreateGameRequest createRequest = new CreateGameRequest(validAuthToken, "Test Game");
         CreateGameResult createResult = gameService.createGame(createRequest);
 
-        JoinGameRequest joinRequest = new JoinGameRequest("WHITE", createResult.gameID(), validAuthToken);
+        JoinGameRequest joinRequest = new JoinGameRequest(validAuthToken, createResult.gameID(), "WHITE");
         gameService.joinGame(joinRequest);
 
         ListGamesRequest listRequest = new ListGamesRequest(validAuthToken);
         ListGamesResult listResult = gameService.listGames(listRequest);
-
-        assertEquals("testUser", listResult.games().getFirst().whiteUsername());
-        assertNull(listResult.games().getFirst().blackUsername());
+        assertEquals(1, listResult.games().size());
+        assertEquals("testUser", listResult.games().get(0).whiteUsername());
+        assertNull(listResult.games().get(0).blackUsername());
     }
 
     @Test
     public void joinGameNegative() throws DataAccessException {
-        CreateGameRequest createRequest = new CreateGameRequest("Test Game", validAuthToken);
+        CreateGameRequest createRequest = new CreateGameRequest(validAuthToken, "Test Game");
         CreateGameResult createResult = gameService.createGame(createRequest);
 
-        JoinGameRequest joinRequest = new JoinGameRequest("WHITE", createResult.gameID(), validAuthToken);
+        JoinGameRequest joinRequest = new JoinGameRequest(validAuthToken, createResult.gameID(), "WHITE");
         gameService.joinGame(joinRequest);
 
         try {

@@ -39,7 +39,7 @@ public class ClearServiceTest {
         RegisterRequest registerRequest = new RegisterRequest("testUser", "password", "email");
         RegisterResult registerResult = userService.register(registerRequest);
 
-        CreateGameRequest createGameRequest = new CreateGameRequest("Test Game", registerResult.authToken());
+        CreateGameRequest createGameRequest = new CreateGameRequest(registerResult.authToken(), "Test Game");
         CreateGameResult createGameResult = gameService.createGame(createGameRequest);
 
         assertNotNull(userDAO.getUser("testUser"));
