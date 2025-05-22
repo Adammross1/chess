@@ -43,6 +43,13 @@ public class UserHandler {
     public Object login(Request req, Response res) {
         try {
             LoginRequest request = gson.fromJson(req.body(), LoginRequest.class);
+            
+            // Add validation for null fields
+            if (request.username() == null || request.password() == null) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Error: bad request"));
+            }
+            
             LoginResult result = userService.login(request);
             res.status(200);
             return gson.toJson(result);
