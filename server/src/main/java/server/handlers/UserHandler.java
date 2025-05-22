@@ -21,6 +21,17 @@ public class UserHandler {
         this.userService = userService;
     }
 
+    private Object handleDataAccessException(DataAccessException e, Response res) {
+        if (e.getMessage().contains("unauthorized")) {
+            res.status(401);
+        } else if (e.getMessage().contains("already taken")) {
+            res.status(403);
+        } else {
+            res.status(500);
+        }
+        return gson.toJson(Map.of("message", e.getMessage()));
+    }
+
     public Object register(Request req, Response res) {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
@@ -34,12 +45,7 @@ public class UserHandler {
             res.status(200);
             return gson.toJson(result);
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("already taken")) {
-                res.status(403);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         } catch (Exception e) {
             res.status(400);
             return gson.toJson(Map.of("message", "Error: bad request"));
@@ -59,12 +65,7 @@ public class UserHandler {
             res.status(200);
             return gson.toJson(result);
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
-                res.status(401);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         } catch (Exception e) {
             res.status(400);
             return gson.toJson(Map.of("message", "Error: bad request"));
@@ -79,12 +80,7 @@ public class UserHandler {
             res.status(200);
             return gson.toJson(Map.of());
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
-                res.status(401);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         }
     }
 }

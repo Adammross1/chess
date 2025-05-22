@@ -4,16 +4,21 @@ import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class RookMovesCalculator implements PieceMovesCalculator {
     @Override
-    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
+    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
+        if (board.getPiece(myPosition) == null) {
+            return Collections.emptyList();
+        }
+
         Collection<ChessMove> moves = new ArrayList<>();
-        ChessPiece rook = board.getPiece(position);
+        ChessPiece rook = board.getPiece(myPosition);
         if (rook == null || rook.getPieceType() != ChessPiece.PieceType.ROOK) return moves;
 
-        int row = position.getRow();
-        int col = position.getColumn();
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
 
         record Direction(int rowOffset, int colOffset) {}
 
@@ -33,9 +38,9 @@ public class RookMovesCalculator implements PieceMovesCalculator {
                 ChessPiece target = board.getPiece(newPos);
 
                 if (target == null) {
-                    moves.add(new ChessMove(position, newPos, null));
+                    moves.add(new ChessMove(myPosition, newPos, null));
                 } else if (target.getTeamColor() != rook.getTeamColor()) {
-                    moves.add(new ChessMove(position, newPos, null));
+                    moves.add(new ChessMove(myPosition, newPos, null));
                     break;
                 } else if (target.getTeamColor() == rook.getTeamColor()) {
                     break;

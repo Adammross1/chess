@@ -4,16 +4,21 @@ import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class BishopMovesCalculator implements PieceMovesCalculator {
     @Override
-    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
-        Collection<ChessMove> moves = new ArrayList<>();
-        ChessPiece bishop = board.getPiece(position);
-        if (bishop == null || bishop.getPieceType() != ChessPiece.PieceType.BISHOP) return moves;
+    public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
+        if (board.getPiece(myPosition) == null) {
+            return Collections.emptyList();
+        }
 
-        int row = position.getRow();
-        int col = position.getColumn();
+        Collection<ChessMove> moves = new ArrayList<>();
+        ChessPiece bishop = board.getPiece(myPosition);
+        if (bishop.getPieceType() != ChessPiece.PieceType.BISHOP) return moves;
+
+        int row = myPosition.getRow();
+        int col = myPosition.getColumn();
 
         record Direction(int rowOffset, int colOffset) {}
 
@@ -33,9 +38,9 @@ public class BishopMovesCalculator implements PieceMovesCalculator {
                 ChessPiece target = board.getPiece(newPos);
 
                 if (target == null) {
-                    moves.add(new ChessMove(position, newPos, null));
+                    moves.add(new ChessMove(myPosition, newPos, null));
                 } else if (target.getTeamColor() != bishop.getTeamColor()) {
-                    moves.add(new ChessMove(position, newPos, null));
+                    moves.add(new ChessMove(myPosition, newPos, null));
                     break;
                 } else if (target.getTeamColor() == bishop.getTeamColor()) {
                     break;

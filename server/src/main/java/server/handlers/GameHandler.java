@@ -21,6 +21,19 @@ public class GameHandler {
         this.gameService = gameService;
     }
 
+    private Object handleDataAccessException(DataAccessException e, Response res) {
+        if (e.getMessage().contains("unauthorized")) {
+            res.status(401);
+        } else if (e.getMessage().contains("already taken")) {
+            res.status(403);
+        } else if (e.getMessage().contains("bad request")) {
+            res.status(400);
+        } else {
+            res.status(500);
+        }
+        return gson.toJson(Map.of("message", e.getMessage()));
+    }
+
     public Object createGame(Request req, Response res) {
         try {
             String authToken = req.headers("authorization");
@@ -37,14 +50,7 @@ public class GameHandler {
             res.status(200);
             return gson.toJson(Map.of("gameID", result.gameID()));
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
-                res.status(401);
-            } else if (e.getMessage().contains("bad request")) {
-                res.status(400);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         } catch (Exception e) {
             res.status(400);
             return gson.toJson(Map.of("message", "Error: bad request"));
@@ -63,16 +69,7 @@ public class GameHandler {
             res.status(200);
             return gson.toJson(Map.of());
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
-                res.status(401);
-            } else if (e.getMessage().contains("already taken")) {
-                res.status(403);
-            } else if (e.getMessage().contains("bad request")) {
-                res.status(400);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         } catch (Exception e) {
             res.status(400);
             return gson.toJson(Map.of("message", "Error: bad request"));
@@ -87,12 +84,7 @@ public class GameHandler {
             res.status(200);
             return gson.toJson(Map.of("games", result.games()));
         } catch (DataAccessException e) {
-            if (e.getMessage().contains("unauthorized")) {
-                res.status(401);
-            } else {
-                res.status(500);
-            }
-            return gson.toJson(Map.of("message", e.getMessage()));
+            return handleDataAccessException(e, res);
         }
     }
 }

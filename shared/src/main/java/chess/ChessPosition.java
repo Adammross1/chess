@@ -2,12 +2,6 @@ package chess;
 
 import java.util.Objects;
 
-/**
- * Represents a single square position on a chess board
- * <p>
- * Note: You can add to this class, but you may not alter
- * signature of the existing methods.
- */
 public class ChessPosition {
 
     private final int row;
@@ -19,27 +13,18 @@ public class ChessPosition {
         this.col = col;
     }
 
-    /**
-     * @return which row this position is in
-     * 1 codes for the bottom row
-     */
     public int getRow() {
         return row;
     }
 
-    /**
-     * @return which column this position is in
-     * 1 codes for the left row
-     */
     public int getColumn() {
         return col;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         ChessPosition that = (ChessPosition) o;
         return row == that.row && col == that.col;
     }
@@ -48,22 +33,4 @@ public class ChessPosition {
     public int hashCode() {
         return Objects.hash(row, col);
     }
-
-//    @Override
-//    public boolean equals(Object o) {
-//        if (this == o) return true;
-//        if (o == null || getClass() != o.getClass()) return false;
-//
-//        ChessPiece that = (ChessPiece) o;
-//
-//        if (type != that.type) return false;
-//        return pieceColor == that.pieceColor;
-//    }
-//
-//    @Override
-//    public int hashCode() {
-//        int result = type != null ? type.hashCode() : 0;
-//        result = 31 * result + (pieceColor != null ? pieceColor.hashCode() : 0);
-//        return result;
-//    }
 }

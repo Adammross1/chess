@@ -4,10 +4,15 @@ import chess.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 
 public class KnightMovesCalculator implements PieceMovesCalculator {
     @Override
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition position) {
+        if (board.getPiece(position) == null) {
+            return Collections.emptyList();
+        }
+
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece knight = board.getPiece(position);
         if (knight == null || knight.getPieceType() != ChessPiece.PieceType.KNIGHT) return moves;

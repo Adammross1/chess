@@ -96,37 +96,4 @@ public class ChessBoard {
                 "squares=" + Arrays.toString(squares) +
                 '}';
     }
-
-    private char getPieceChar(ChessPiece piece) {
-        char c;
-
-        switch (piece.getPieceType()) {
-            case KING:
-                c = 'k';
-                break;
-            case QUEEN:
-                c = 'q';
-                break;
-            case BISHOP:
-                c = 'b';
-                break;
-            case KNIGHT:
-                c = 'n';
-                break;
-            case ROOK:
-                c = 'r';
-                break;
-            case PAWN:
-                c = 'p';
-                break;
-            default:
-                c = '?';
-        }
-
-        if (piece.getTeamColor() == ChessGame.TeamColor.WHITE) {
-            c = Character.toUpperCase(c);
-        }
-
-        return c;
-    }
 }
