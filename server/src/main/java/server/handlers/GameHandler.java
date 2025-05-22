@@ -27,6 +27,11 @@ public class GameHandler {
             var body = gson.fromJson(req.body(), Map.class);
             String gameName = (String) body.get("gameName");
 
+            if (gameName == null) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Error: bad request"));
+            }
+
             CreateGameRequest request = new CreateGameRequest(authToken, gameName);
             CreateGameResult result = gameService.createGame(request);
             res.status(200);

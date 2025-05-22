@@ -24,6 +24,12 @@ public class UserHandler {
     public Object register(Request req, Response res) {
         try {
             RegisterRequest request = gson.fromJson(req.body(), RegisterRequest.class);
+            
+            if (request.username() == null || request.password() == null || request.email() == null) {
+                res.status(400);
+                return gson.toJson(Map.of("message", "Error: bad request"));
+            }
+            
             RegisterResult result = userService.register(request);
             res.status(200);
             return gson.toJson(result);
@@ -44,7 +50,6 @@ public class UserHandler {
         try {
             LoginRequest request = gson.fromJson(req.body(), LoginRequest.class);
             
-            // Add validation for null fields
             if (request.username() == null || request.password() == null) {
                 res.status(400);
                 return gson.toJson(Map.of("message", "Error: bad request"));
