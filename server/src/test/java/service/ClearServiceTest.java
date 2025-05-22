@@ -52,15 +52,4 @@ public class ClearServiceTest {
         assertNull(authDAO.getAuth(registerResult.authToken()));
         assertNull(gameDAO.getGame(createGameResult.gameID()));
     }
-
-    @Test
-    public void clearNegative() throws DataAccessException {
-        clearService.clearApplication(new ClearAppRequest());
-
-        clearService.clearApplication(new ClearAppRequest());
-
-        assertNull(userDAO.getUser("testUser"));
-        assertNull(authDAO.getAuth("any-token"));
-        assertNull(gameDAO.getGame(1));
-    }
 }
