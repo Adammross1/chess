@@ -15,17 +15,25 @@ public class Server {
     private final ClearHandler clearHandler;
 
     public Server() {
-        UserDAO userDAO = new MemoryUserDAO();
-        GameDAO gameDAO = new MemoryGameDAO();
-        AuthDAO authDAO = new MemoryAuthDAO();
+        try {
+            // Initialize the database
+            DatabaseManager.initializeDatabase();
 
-        UserService userService = new UserService(userDAO, authDAO);
-        GameService gameService = new GameService(gameDAO, authDAO);
-        ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
+            // Create MySQL DAOs
+            UserDAO userDAO = new MySQLUserDAO();
+            GameDAO gameDAO = new MySQLGameDAO();
+            AuthDAO authDAO = new MySQLAuthDAO();
 
-        userHandler = new UserHandler(userService);
-        gameHandler = new GameHandler(gameService);
-        clearHandler = new ClearHandler(clearService);
+            UserService userService = new UserService(userDAO, authDAO);
+            GameService gameService = new GameService(gameDAO, authDAO);
+            ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
+
+            userHandler = new UserHandler(userService);
+            gameHandler = new GameHandler(gameService);
+            clearHandler = new ClearHandler(clearService);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to initialize server: " + e.getMessage(), e);
+        }
     }
 
     public int run(int desiredPort) {
