@@ -29,7 +29,7 @@ public class UserHandler {
         } else {
             res.status(500);
         }
-        return gson.toJson(Map.of("message", e.getMessage()));
+        return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
     }
 
     public Object register(Request req, Response res) {
