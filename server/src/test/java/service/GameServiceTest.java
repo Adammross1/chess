@@ -15,16 +15,21 @@ import static org.junit.jupiter.api.Assertions.*;
 public class GameServiceTest {
     private GameService gameService;
     private String validAuthToken;
+    private GameDAO gameDAO;
+    private AuthDAO authDAO;
+    private UserDAO userDAO;
 
     @BeforeEach
     public void setUp() throws DataAccessException {
-        GameDAO gameDAO = new MemoryGameDAO();
-        AuthDAO authDAO = new MemoryAuthDAO();
-        UserDAO userDAO = new MemoryUserDAO();
+        gameDAO = new MySQLGameDAO();
+        authDAO = new MySQLAuthDAO();
+        userDAO = new MySQLUserDAO();
 
         gameDAO.clear();
         authDAO.clear();
         userDAO.clear();
+
+        userDAO.createUser(new model.UserData("testUser", "password", "test@email.com"));
 
         gameService = new GameService(gameDAO, authDAO);
 

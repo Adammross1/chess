@@ -13,11 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class UserServiceTest {
     private UserService userService;
+    private UserDAO userDAO;
+    private AuthDAO authDAO;
 
     @BeforeEach
     public void setUp() throws DataAccessException {
-        UserDAO userDAO = new MemoryUserDAO();
-        AuthDAO authDAO = new MemoryAuthDAO();
+        userDAO = new MySQLUserDAO();
+        authDAO = new MySQLAuthDAO();
 
         userDAO.clear();
         authDAO.clear();

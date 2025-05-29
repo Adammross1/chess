@@ -26,4 +26,13 @@ public interface UserDAO {
      * @throws DataAccessException if an error occurs
      */
     UserData getUser(String username) throws DataAccessException;
+
+    /**
+     * Verifies if the provided password matches the stored password
+     * @param username the username to check
+     * @param password the password to verify
+     * @return true if the password matches, false otherwise
+     * @throws DataAccessException if an error occurs
+     */
+    boolean verifyPassword(String username, String password) throws DataAccessException;
 }

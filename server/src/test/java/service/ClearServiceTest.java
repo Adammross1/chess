@@ -21,9 +21,9 @@ public class ClearServiceTest {
 
     @BeforeEach
     public void setUp() throws DataAccessException {
-        userDAO = new MemoryUserDAO();
-        authDAO = new MemoryAuthDAO();
-        gameDAO = new MemoryGameDAO();
+        userDAO = new MySQLUserDAO();
+        authDAO = new MySQLAuthDAO();
+        gameDAO = new MySQLGameDAO();
 
         userDAO.clear();
         authDAO.clear();

@@ -18,8 +18,8 @@ public class ClearService {
     }
 
     public void clearApplication(ClearAppRequest request) throws DataAccessException {
-        userDAO.clear();
-        gameDAO.clear();
         authDAO.clear();
+        gameDAO.clear();
+        userDAO.clear();
     }
 }

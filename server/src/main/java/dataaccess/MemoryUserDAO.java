@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Memory-based implementation of UserDAO. Will be replaced with DB implementation.
+ * Memory-based implementation of UserDAO
  */
 public class MemoryUserDAO implements UserDAO {
     private final Map<String, UserData> users = new HashMap<>();
@@ -27,5 +27,10 @@ public class MemoryUserDAO implements UserDAO {
     public UserData getUser(String username) {
         return users.get(username);
     }
-}
 
+    @Override
+    public boolean verifyPassword(String username, String password) {
+        UserData user = users.get(username);
+        return user != null && user.password().equals(password);
+    }
+} 
