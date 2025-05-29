@@ -80,7 +80,6 @@ public class MySQLUserDAO implements UserDAO {
 
             conn.commit(); // Commit transaction
             logger.info("Transaction committed for creating user: " + user.username());
-            System.out.println("User created: " + user.username()); // Keep this line for existing output
         } catch (SQLException ex) {
             logger.severe("SQL Error creating user " + user.username() + ": " + ex.getMessage());
             if (ex.getMessage().contains("Duplicate entry")) {
