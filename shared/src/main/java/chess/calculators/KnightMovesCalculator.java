@@ -15,7 +15,9 @@ public class KnightMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece knight = board.getPiece(position);
-        if (knight == null || knight.getPieceType() != ChessPiece.PieceType.KNIGHT) return moves;
+        if (knight == null || knight.getPieceType() != ChessPiece.PieceType.KNIGHT) {
+            return moves;
+        }
 
         int row = position.getRow();
         int col = position.getColumn();

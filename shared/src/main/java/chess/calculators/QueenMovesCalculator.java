@@ -15,7 +15,9 @@ public class QueenMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece queen = board.getPiece(position);
-        if (queen == null || queen.getPieceType() != ChessPiece.PieceType.QUEEN) return moves;
+        if (queen == null || queen.getPieceType() != ChessPiece.PieceType.QUEEN) {
+            return moves;
+        }
 
         int row = position.getRow();
         int col = position.getColumn();

@@ -5,7 +5,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 public class DatabaseManager {
-    private static final Logger logger = Logger.getLogger(DatabaseManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DatabaseManager.class.getName());
 
     private static String databaseName;
     private static String dbUsername;
@@ -23,18 +23,18 @@ public class DatabaseManager {
      * Creates the database if it does not already exist.
      */
     static public void createDatabase() throws DataAccessException {
-        logger.info("Attempting to create database: " + databaseName);
+        LOGGER.info("Attempting to create database: " + databaseName);
         var statement = "CREATE DATABASE IF NOT EXISTS " + databaseName;
         try (var conn = DriverManager.getConnection(connectionUrl.replace("/" + databaseName, ""), dbUsername, dbPassword);
              var preparedStatement = conn.prepareStatement(statement)) {
-            logger.info("Executing CREATE DATABASE statement");
+            LOGGER.info("Executing CREATE DATABASE statement");
             preparedStatement.executeUpdate();
-            logger.info("CREATE DATABASE statement executed successfully");
+            LOGGER.info("CREATE DATABASE statement executed successfully");
         } catch (SQLException ex) {
-            logger.severe("SQL Error creating database: " + ex.getMessage());
+            LOGGER.severe("SQL Error creating database: " + ex.getMessage());
             throw new DataAccessException("failed to create database", ex);
         }
-        logger.info("Finished createDatabase");
+        LOGGER.info("Finished createDatabase");
     }
 
     /**
@@ -42,13 +42,13 @@ public class DatabaseManager {
      * This method is idempotent and can be called multiple times safely.
      */
     static public void initializeDatabase() throws DataAccessException {
-        logger.info("Initializing database and tables");
+        LOGGER.info("Initializing database and tables");
         // First create the database if it doesn't exist
         createDatabase();
 
         // Then create all tables
         try (var conn = getConnection()) {
-            logger.info("Connected to database for table creation");
+            LOGGER.info("Connected to database for table creation");
             // Create user table
             var createUserTable = """
                 CREATE TABLE IF NOT EXISTS user (
@@ -80,17 +80,17 @@ public class DatabaseManager {
                 """;
 
             try (var statement = conn.createStatement()) {
-                logger.info("Executing CREATE TABLE statements");
+                LOGGER.info("Executing CREATE TABLE statements");
                 statement.execute(createUserTable);
                 statement.execute(createAuthTable);
                 statement.execute(createGameTable);
-                logger.info("CREATE TABLE statements executed successfully");
+                LOGGER.info("CREATE TABLE statements executed successfully");
             }
         } catch (SQLException ex) {
-            logger.severe("SQL Error creating tables: " + ex.getMessage());
+            LOGGER.severe("SQL Error creating tables: " + ex.getMessage());
             throw new DataAccessException("failed to create tables", ex);
         }
-        logger.info("Database and tables initialized");
+        LOGGER.info("Database and tables initialized");
     }
 
     /**
@@ -106,31 +106,31 @@ public class DatabaseManager {
      * </code>
      */
     static Connection getConnection() throws DataAccessException {
-        logger.info("Attempting to get database connection");
+        LOGGER.info("Attempting to get database connection");
         try {
             var conn = DriverManager.getConnection(connectionUrl, dbUsername, dbPassword);
             conn.setCatalog(databaseName);
-            logger.info("Database connection obtained successfully");
+            LOGGER.info("Database connection obtained successfully");
             return conn;
         } catch (SQLException ex) {
-            logger.severe("SQL Error getting database connection: " + ex.getMessage());
+            LOGGER.severe("SQL Error getting database connection: " + ex.getMessage());
             throw new DataAccessException("failed to get connection", ex);
         }
     }
 
     private static void loadPropertiesFromResources() {
-        logger.info("Loading database properties from resources");
+        LOGGER.info("Loading database properties from resources");
         try (var propStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("db.properties")) {
             if (propStream == null) {
-                 logger.severe("Unable to load db.properties");
+                 LOGGER.severe("Unable to load db.properties");
                 throw new Exception("Unable to load db.properties");
             }
             Properties props = new Properties();
             props.load(propStream);
             loadProperties(props);
-             logger.info("Database properties loaded successfully");
+             LOGGER.info("Database properties loaded successfully");
         } catch (Exception ex) {
-             logger.severe("Error loading db.properties: " + ex.getMessage());
+             LOGGER.severe("Error loading db.properties: " + ex.getMessage());
             throw new RuntimeException("unable to process db.properties", ex);
         }
     }
@@ -143,6 +143,6 @@ public class DatabaseManager {
         var host = props.getProperty("db.host");
         var port = Integer.parseInt(props.getProperty("db.port"));
         connectionUrl = String.format("jdbc:mysql://%s:%d/%s", host, port, databaseName);
-        logger.info("Database properties loaded: " + connectionUrl);
+        LOGGER.info("Database properties loaded: " + connectionUrl);
     }
 }

@@ -15,7 +15,9 @@ public class RookMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece rook = board.getPiece(myPosition);
-        if (rook == null || rook.getPieceType() != ChessPiece.PieceType.ROOK) return moves;
+        if (rook == null || rook.getPieceType() != ChessPiece.PieceType.ROOK) {
+            return moves;
+        }
 
         int row = myPosition.getRow();
         int col = myPosition.getColumn();

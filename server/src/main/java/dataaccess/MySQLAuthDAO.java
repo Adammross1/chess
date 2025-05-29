@@ -6,40 +6,40 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 public class MySQLAuthDAO implements AuthDAO {
-    private static final Logger logger = Logger.getLogger(MySQLAuthDAO.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(MySQLAuthDAO.class.getName());
 
     public MySQLAuthDAO() throws DataAccessException {
-        logger.info("Initializing MySQLAuthDAO");
+        LOGGER.info("Initializing MySQLAuthDAO");
         DatabaseManager.initializeDatabase();
-        logger.info("MySQLAuthDAO initialized");
+        LOGGER.info("MySQLAuthDAO initialized");
     }
 
     @Override
     public void clear() throws DataAccessException {
-        logger.info("Clearing auth table");
+        LOGGER.info("Clearing auth table");
         var statement = "DELETE FROM auth";
         Connection conn = null;
         try {
             conn = DatabaseManager.getConnection();
             conn.setAutoCommit(false); // Start transaction
-            logger.info("Transaction started for clearing auth table");
+            LOGGER.info("Transaction started for clearing auth table");
 
             try (var preparedStatement = conn.prepareStatement(statement)) {
-                logger.info("Executing DELETE FROM auth statement");
+                LOGGER.info("Executing DELETE FROM auth statement");
                 preparedStatement.executeUpdate();
-                logger.info("DELETE FROM auth statement executed successfully");
+                LOGGER.info("DELETE FROM auth statement executed successfully");
             }
 
             conn.commit(); // Commit transaction
-            logger.info("Transaction committed for clearing auth table");
+            LOGGER.info("Transaction committed for clearing auth table");
         } catch (SQLException ex) {
-            logger.severe("SQL Error clearing auth table: " + ex.getMessage());
+            LOGGER.severe("SQL Error clearing auth table: " + ex.getMessage());
             if (conn != null) {
                 try {
                     conn.rollback(); // Rollback transaction
-                    logger.warning("Transaction rolled back for clearing auth table");
+                    LOGGER.warning("Transaction rolled back for clearing auth table");
                 } catch (SQLException rollbackEx) {
-                    logger.severe("Error during rollback: " + rollbackEx.getMessage());
+                    LOGGER.severe("Error during rollback: " + rollbackEx.getMessage());
                 }
             }
             throw new DataAccessException("failed to clear auth table", ex);
@@ -47,52 +47,52 @@ public class MySQLAuthDAO implements AuthDAO {
             if (conn != null) {
                 try {
                     conn.close(); // Close connection
-                    logger.info("Database connection closed after clearing auth table");
+                    LOGGER.info("Database connection closed after clearing auth table");
                 } catch (SQLException closeEx) {
-                    logger.severe("Error closing connection after clearing auth table: " + closeEx.getMessage());
+                    LOGGER.severe("Error closing connection after clearing auth table: " + closeEx.getMessage());
                 }
             }
         }
-        logger.info("Auth table cleared");
+        LOGGER.info("Auth table cleared");
     }
 
     @Override
     public AuthData createAuth(AuthData authData) throws DataAccessException {
-        logger.info("Creating auth token for user: " + authData.username());
+        LOGGER.info("Creating auth token for user: " + authData.username());
         var statement = "INSERT INTO auth (auth_token, username) VALUES (?, ?)";
         Connection conn = null;
         try {
             conn = DatabaseManager.getConnection();
             conn.setAutoCommit(false); // Start transaction
-            logger.info("Transaction started for creating auth token for user: " + authData.username());
+            LOGGER.info("Transaction started for creating auth token for user: " + authData.username());
 
             String authToken = authData.authToken();
             if (authToken == null || authToken.isEmpty()) {
                 authToken = UUID.randomUUID().toString();
-                logger.fine("Generated new auth token: " + authToken);
+                LOGGER.fine("Generated new auth token: " + authToken);
             } else {
-                 logger.fine("Using provided auth token: " + authToken);
+                 LOGGER.fine("Using provided auth token: " + authToken);
             }
             
             try (var preparedStatement = conn.prepareStatement(statement)) {
                 preparedStatement.setString(1, authToken);
                 preparedStatement.setString(2, authData.username());
-                logger.info("Executing INSERT statement for auth token: " + authToken);
+                LOGGER.info("Executing INSERT statement for auth token: " + authToken);
                 preparedStatement.executeUpdate();
-                logger.info("INSERT statement executed successfully for auth token: " + authToken);
+                LOGGER.info("INSERT statement executed successfully for auth token: " + authToken);
             }
 
             conn.commit(); // Commit transaction
-            logger.info("Transaction committed for creating auth token for user: " + authData.username());
+            LOGGER.info("Transaction committed for creating auth token for user: " + authData.username());
             return new AuthData(authToken, authData.username());
         } catch (SQLException ex) {
-            logger.severe("SQL Error creating auth token for user " + authData.username() + ": " + ex.getMessage());
+            LOGGER.severe("SQL Error creating auth token for user " + authData.username() + ": " + ex.getMessage());
              if (conn != null) {
                 try {
                     conn.rollback(); // Rollback transaction
-                    logger.warning("Transaction rolled back for creating auth token for user: " + authData.username());
+                    LOGGER.warning("Transaction rolled back for creating auth token for user: " + authData.username());
                 } catch (SQLException rollbackEx) {
-                    logger.severe("Error during rollback: " + rollbackEx.getMessage());
+                    LOGGER.severe("Error during rollback: " + rollbackEx.getMessage());
                 }
             }
             throw new DataAccessException("failed to create auth token", ex);
@@ -100,9 +100,9 @@ public class MySQLAuthDAO implements AuthDAO {
              if (conn != null) {
                 try {
                     conn.close(); // Close connection
-                    logger.info("Database connection closed after creating auth token for user: " + authData.username());
+                    LOGGER.info("Database connection closed after creating auth token for user: " + authData.username());
                 } catch (SQLException closeEx) {
-                    logger.severe("Error closing connection after creating auth token for user: " + closeEx.getMessage());
+                    LOGGER.severe("Error closing connection after creating auth token for user: " + closeEx.getMessage());
                 }
             }
         }
@@ -110,68 +110,68 @@ public class MySQLAuthDAO implements AuthDAO {
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
-        logger.info("Getting auth token: " + authToken);
+        LOGGER.info("Getting auth token: " + authToken);
         var statement = "SELECT username FROM auth WHERE auth_token = ?";
         try (var conn = DatabaseManager.getConnection();
              var preparedStatement = conn.prepareStatement(statement)) {
             preparedStatement.setString(1, authToken);
-            logger.info("Executing SELECT statement for auth token: " + authToken);
+            LOGGER.info("Executing SELECT statement for auth token: " + authToken);
             try (var rs = preparedStatement.executeQuery()) {
-                 logger.info("SELECT statement executed for auth token: " + authToken);
+                 LOGGER.info("SELECT statement executed for auth token: " + authToken);
                 if (rs.next()) {
                     String username = rs.getString("username");
-                    logger.info("Auth token found for user: " + username);
+                    LOGGER.info("Auth token found for user: " + username);
                     return new AuthData(authToken, username);
                 }
-                logger.info("Auth token not found: " + authToken);
+                LOGGER.info("Auth token not found: " + authToken);
                 return null;
             }
         } catch (SQLException ex) {
-            logger.severe("SQL Error getting auth token " + authToken + ": " + ex.getMessage());
+            LOGGER.severe("SQL Error getting auth token " + authToken + ": " + ex.getMessage());
             throw new DataAccessException("failed to get auth token", ex);
         } finally {
-            logger.info("Finished getAuth for token: " + authToken);
+            LOGGER.info("Finished getAuth for token: " + authToken);
         }
     }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
-        logger.info("Deleting auth token: " + authToken);
+        LOGGER.info("Deleting auth token: " + authToken);
         var statement = "DELETE FROM auth WHERE auth_token = ?";
          Connection conn = null;
         try {
             conn = DatabaseManager.getConnection();
             conn.setAutoCommit(false); // Start transaction
-            logger.info("Transaction started for deleting auth token: " + authToken);
+            LOGGER.info("Transaction started for deleting auth token: " + authToken);
 
             try (var preparedStatement = conn.prepareStatement(statement)) {
                 preparedStatement.setString(1, authToken);
-                logger.info("Executing DELETE statement for auth token: " + authToken);
+                LOGGER.info("Executing DELETE statement for auth token: " + authToken);
                 int rowsAffected = preparedStatement.executeUpdate();
-                logger.info("DELETE statement executed for auth token: " + authToken + ", rows affected: " + rowsAffected);
+                LOGGER.info("DELETE statement executed for auth token: " + authToken + ", rows affected: " + rowsAffected);
                 if (rowsAffected == 0) {
-                    logger.warning("Auth token not found for deletion: " + authToken);
+                    LOGGER.warning("Auth token not found for deletion: " + authToken);
                     if (conn != null) {
                         try {
                             conn.rollback(); // Rollback transaction
-                             logger.warning("Transaction rolled back for deleting auth token (not found): " + authToken);
+                             LOGGER.warning("Transaction rolled back for deleting auth token (not found): " + authToken);
                         } catch (SQLException rollbackEx) {
-                             logger.severe("Error during rollback (not found): " + rollbackEx.getMessage());
+                             LOGGER.severe("Error during rollback (not found): " + rollbackEx.getMessage());
                         }
                     }
                     throw new DataAccessException("Error: unauthorized");
                 }
             }
             conn.commit(); // Commit transaction
-            logger.info("Transaction committed for deleting auth token: " + authToken);
+            LOGGER.info("Transaction committed for deleting auth token: " + authToken);
         } catch (SQLException ex) {
-             logger.severe("SQL Error deleting auth token " + authToken + ": " + ex.getMessage());
+             LOGGER.severe("SQL Error deleting auth token " + authToken + ": " + ex.getMessage());
              if (conn != null) {
                 try {
                     conn.rollback(); // Rollback transaction
-                     logger.warning("Transaction rolled back for deleting auth token: " + authToken);
+                     LOGGER.warning("Transaction rolled back for deleting auth token: " + authToken);
                 } catch (SQLException rollbackEx) {
-                    logger.severe("Error during rollback: " + rollbackEx.getMessage());
+                    LOGGER.severe("Error during rollback: " + rollbackEx.getMessage());
                 }
             }
             throw new DataAccessException("failed to delete auth token", ex);
@@ -179,12 +179,12 @@ public class MySQLAuthDAO implements AuthDAO {
             if (conn != null) {
                 try {
                     conn.close(); // Close connection
-                    logger.info("Database connection closed after deleting auth token: " + authToken);
+                    LOGGER.info("Database connection closed after deleting auth token: " + authToken);
                 } catch (SQLException closeEx) {
-                    logger.severe("Error closing connection after deleting auth token: " + closeEx.getMessage());
+                    LOGGER.severe("Error closing connection after deleting auth token: " + closeEx.getMessage());
                 }
             }
         }
-        logger.info("Finished deleteAuth for token: " + authToken);
+        LOGGER.info("Finished deleteAuth for token: " + authToken);
     }
 } 

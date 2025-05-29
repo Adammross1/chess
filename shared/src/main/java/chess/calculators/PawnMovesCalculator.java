@@ -17,7 +17,9 @@ public class PawnMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece pawn = board.getPiece(myPosition);
-        if (pawn.getPieceType() != ChessPiece.PieceType.PAWN) return moves;
+        if (pawn.getPieceType() != ChessPiece.PieceType.PAWN) {
+            return moves;
+        }
 
         int direction = pawn.getTeamColor() == ChessGame.TeamColor.WHITE ? 1 : -1;
         int startRow = pawn.getTeamColor() == ChessGame.TeamColor.WHITE ? 2 : 7;

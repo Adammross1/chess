@@ -15,7 +15,9 @@ public class BishopMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece bishop = board.getPiece(myPosition);
-        if (bishop.getPieceType() != ChessPiece.PieceType.BISHOP) return moves;
+        if (bishop.getPieceType() != ChessPiece.PieceType.BISHOP) {
+            return moves;
+        }
 
         int row = myPosition.getRow();
         int col = myPosition.getColumn();

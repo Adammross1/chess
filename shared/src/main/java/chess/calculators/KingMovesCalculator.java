@@ -15,7 +15,9 @@ public class KingMovesCalculator implements PieceMovesCalculator {
 
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece king = board.getPiece(position);
-        if (king == null || king.getPieceType() != ChessPiece.PieceType.KING) return moves;
+        if (king.getPieceType() != ChessPiece.PieceType.KING) {
+            return moves;
+        }
 
         int row = position.getRow();
         int col = position.getColumn();

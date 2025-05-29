@@ -13,11 +13,16 @@ public class MySQLUserDAOTest {
         userDAO.clear();
     }
 
+    private UserData createTestUser() throws DataAccessException {
+        UserData user = new UserData("testUser", "password123", "test@email.com");
+        userDAO.createUser(user);
+        return user;
+    }
+
     @Test
     @DisplayName("Positive: Create user successfully")
     void createUserSuccess() throws DataAccessException {
-        UserData user = new UserData("testUser", "password123", "test@email.com");
-        userDAO.createUser(user);
+        UserData user = createTestUser();
         
         UserData retrievedUser = userDAO.getUser("testUser");
         assertNotNull(retrievedUser);
@@ -27,19 +32,17 @@ public class MySQLUserDAOTest {
     @Test
     @DisplayName("Negative: Create duplicate user")
     void createUserDuplicate() throws DataAccessException {
-        UserData user = new UserData("testUser", "password123", "test@email.com");
-        userDAO.createUser(user);
+        createTestUser();
         
         assertThrows(DataAccessException.class, () -> {
-            userDAO.createUser(user);
+            createTestUser();
         });
     }
 
     @Test
     @DisplayName("Positive: Get existing user")
     void getUserSuccess() throws DataAccessException {
-        UserData user = new UserData("testUser", "password123", "test@email.com");
-        userDAO.createUser(user);
+        createTestUser();
         
         UserData retrievedUser = userDAO.getUser("testUser");
         assertNotNull(retrievedUser);
