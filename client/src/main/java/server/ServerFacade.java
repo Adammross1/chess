@@ -3,6 +3,7 @@ package server;
 import com.google.gson.Gson;
 import model.AuthData;
 import model.UserData;
+import model.RegisterResult;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -23,7 +24,8 @@ public class ServerFacade {
     public AuthData register(String username, String password, String email) throws ResponseException {
         var path = "/user";
         var request = new UserData(username, password, email);
-        return this.makeRequest("POST", path, request, AuthData.class);
+        var result = this.makeRequest("POST", path, request, RegisterResult.class);
+        return new AuthData(result.authToken(), result.username());
     }
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
@@ -35,9 +37,17 @@ public class ServerFacade {
 
             writeBody(request, http);
             http.connect();
-            throwIfNotSuccessful(http);
+            
+            var status = http.getResponseCode();
+            if (!isSuccessful(status)) {
+                throw new ResponseException(status, "failure: " + status);
+            }
+            
             return readBody(http, responseClass);
         } catch (Exception ex) {
+            if (ex instanceof ResponseException) {
+                throw (ResponseException) ex;
+            }
             throw new ResponseException(500, ex.getMessage());
         }
     }
@@ -49,13 +59,6 @@ public class ServerFacade {
             try (OutputStream reqBody = http.getOutputStream()) {
                 reqBody.write(reqData.getBytes());
             }
-        }
-    }
-
-    private void throwIfNotSuccessful(HttpURLConnection http) throws IOException, ResponseException {
-        var status = http.getResponseCode();
-        if (!isSuccessful(status)) {
-            throw new ResponseException(status, "failure: " + status);
         }
     }
 
