@@ -28,6 +28,18 @@ public class ServerFacade {
         return new AuthData(result.authToken(), result.username());
     }
 
+    public AuthData login(String username, String password) throws ResponseException {
+        var path = "/session";
+        var request = new UserData(username, password, null);
+        var result = this.makeRequest("POST", path, request, RegisterResult.class);
+        return new AuthData(result.authToken(), result.username());
+    }
+
+    public void logout(String authToken) throws ResponseException {
+        var path = "/session";
+        this.makeRequest("DELETE", path, null, null);
+    }
+
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
         try {
             URL url = (new URI(serverUrl + path)).toURL();

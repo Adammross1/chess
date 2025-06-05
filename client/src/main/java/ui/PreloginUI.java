@@ -27,7 +27,7 @@ public class PreloginUI {
             switch (input) {
                 case "help" -> showHelp();
                 case "quit" -> quit();
-                case "login" -> System.out.println("stay tuned");
+                case "login" -> login();
                 case "register" -> register();
                 default -> System.out.println("Unknown command. Type 'help' to see available commands.");
             }
@@ -48,6 +48,33 @@ public class PreloginUI {
         scanner.close();
     }
 
+    private void login() {
+        try {
+            System.out.print("Username: ");
+            String username = scanner.nextLine().trim();
+            System.out.print("Password: ");
+            String password = scanner.nextLine().trim();
+
+            if (username.isEmpty() || password.isEmpty()) {
+                System.out.println("Error: Username and password are required");
+                return;
+            }
+
+            AuthData authData = serverFacade.login(username, password);
+            System.out.println("Login successful!");
+            
+            // Transition to post-login UI
+            var postloginUI = new PostloginUI(authData.username(), authData.authToken());
+            postloginUI.run();
+        } catch (ResponseException e) {
+            if (e.getStatusCode() == 401) {
+                System.out.println("Error: Invalid username or password");
+            } else {
+                System.out.println("Error: " + e.getMessage());
+            }
+        }
+    }
+
     private void register() {
         try {
             System.out.print("Username: ");
@@ -66,8 +93,6 @@ public class PreloginUI {
             System.out.println("Registration successful!");
             
             // Transition to post-login UI
-            running = false;
-            scanner.close();
             var postloginUI = new PostloginUI(authData.username(), authData.authToken());
             postloginUI.run();
         } catch (ResponseException e) {
