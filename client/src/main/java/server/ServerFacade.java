@@ -88,6 +88,80 @@ public class ServerFacade {
         return result.games();
     }
 
+    public void joinGame(String authToken, int gameId, ChessGame.TeamColor playerColor) throws ResponseException {
+        try {
+            URL url = new URI(serverUrl + "/game").toURL();
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            http.setRequestMethod("PUT");
+            http.setDoOutput(true);
+            http.setRequestProperty("Authorization", authToken);
+            http.setRequestProperty("Content-Type", "application/json");
+
+            // Create request body
+            var requestBody = new JoinGameRequest(playerColor, gameId);
+            String jsonRequest = gson.toJson(requestBody);
+
+            // Write request body
+            try (OutputStream os = http.getOutputStream()) {
+                byte[] input = jsonRequest.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            // Check response
+            int statusCode = http.getResponseCode();
+            if (statusCode != 200) {
+                throw new ResponseException(statusCode, "Failed to join game");
+            }
+        } catch (Exception e) {
+            throw new ResponseException(500, "Error joining game: " + e.getMessage());
+        }
+    }
+
+    public void observeGame(String authToken, int gameId) throws ResponseException {
+        try {
+            URL url = new URI(serverUrl + "/game").toURL();
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            http.setRequestMethod("PUT");
+            http.setDoOutput(true);
+            http.setRequestProperty("Authorization", "Bearer " + authToken);
+            http.setRequestProperty("Content-Type", "application/json");
+
+            // Create request body - for observing, we don't specify a color
+            var requestBody = new JoinGameRequest(null, gameId);
+            String jsonRequest = gson.toJson(requestBody);
+
+            // Write request body
+            try (OutputStream os = http.getOutputStream()) {
+                byte[] input = jsonRequest.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+
+            // Check response
+            int statusCode = http.getResponseCode();
+            if (statusCode != 200) {
+                throw new ResponseException(statusCode, "Failed to observe game");
+            }
+        } catch (Exception e) {
+            throw new ResponseException(500, "Error observing game: " + e.getMessage());
+        }
+    }
+
+    public void clear() throws ResponseException {
+        try {
+            URL url = new URI(serverUrl + "/db").toURL();
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            http.setRequestMethod("DELETE");
+            http.setDoOutput(false);
+
+            int statusCode = http.getResponseCode();
+            if (statusCode != 200) {
+                throw new ResponseException(statusCode, "Failed to clear database");
+            }
+        } catch (Exception e) {
+            throw new ResponseException(500, "Error clearing database: " + e.getMessage());
+        }
+    }
+
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
         return makeRequest(method, path, request, responseClass, null);
     }
@@ -160,4 +234,6 @@ public class ServerFacade {
     private boolean isSuccessful(int status) {
         return status / 100 == 2;
     }
+
+    private record JoinGameRequest(ChessGame.TeamColor playerColor, int gameID) {}
 } 

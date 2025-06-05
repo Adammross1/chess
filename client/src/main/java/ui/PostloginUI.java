@@ -3,6 +3,7 @@ package ui;
 import server.ResponseException;
 import server.ServerFacade;
 import model.GameData;
+import chess.ChessGame;
 import java.util.Scanner;
 import java.util.List;
 import java.util.ArrayList;
@@ -119,10 +120,83 @@ public class PostloginUI {
     }
 
     private void playGame() {
-        System.out.println("Play game functionality coming soon!");
+        if (gameIds.isEmpty()) {
+            System.out.println("No games available. Please use 'list' to see available games first.");
+            return;
+        }
+
+        try {
+            // Get game number
+            System.out.print("Enter game number: ");
+            String gameNumStr = scanner.nextLine().trim();
+            int gameNum;
+            try {
+                gameNum = Integer.parseInt(gameNumStr);
+                if (gameNum < 1 || gameNum > gameIds.size()) {
+                    System.out.println("Invalid game number. Please enter a number between 1 and " + gameIds.size());
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                return;
+            }
+
+            // Get color choice
+            System.out.print("Enter color (WHITE/BLACK): ");
+            String colorStr = scanner.nextLine().trim().toUpperCase();
+            ChessGame.TeamColor color;
+            try {
+                color = ChessGame.TeamColor.valueOf(colorStr);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Invalid color. Please enter WHITE or BLACK.");
+                return;
+            }
+
+            // Join the game
+            int gameId = gameIds.get(gameNum - 1);
+            serverFacade.joinGame(authToken, gameId, color);
+            System.out.println("Successfully joined game as " + color);
+            
+            // TODO: Transition to gameplay UI
+            System.out.println("Gameplay UI coming soon!");
+            
+        } catch (ResponseException e) {
+            System.out.println("Error joining game: " + e.getMessage());
+        }
     }
 
     private void observeGame() {
-        System.out.println("Observe game functionality coming soon!");
+        if (gameIds.isEmpty()) {
+            System.out.println("No games available. Please use 'list' to see available games first.");
+            return;
+        }
+
+        try {
+            // Get game number
+            System.out.print("Enter game number: ");
+            String gameNumStr = scanner.nextLine().trim();
+            int gameNum;
+            try {
+                gameNum = Integer.parseInt(gameNumStr);
+                if (gameNum < 1 || gameNum > gameIds.size()) {
+                    System.out.println("Invalid game number. Please enter a number between 1 and " + gameIds.size());
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input. Please enter a number.");
+                return;
+            }
+
+            // Observe the game
+            int gameId = gameIds.get(gameNum - 1);
+            serverFacade.observeGame(authToken, gameId);
+            System.out.println("Successfully joined game as observer");
+            
+            // TODO: Transition to gameplay UI
+            System.out.println("Gameplay UI coming soon!");
+            
+        } catch (ResponseException e) {
+            System.out.println("Error observing game: " + e.getMessage());
+        }
     }
 } 

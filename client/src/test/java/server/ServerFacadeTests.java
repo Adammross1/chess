@@ -3,6 +3,7 @@ package server;
 import model.AuthData;
 import model.UserData;
 import model.GameData;
+import chess.ChessGame;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,14 +21,10 @@ public class ServerFacadeTests {
 
     @BeforeEach
     public void setUp() throws ResponseException {
+        // Clear the database before each test
+        serverFacade.clear();
         // Register a test user and get auth token
         authToken = serverFacade.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL).authToken();
-    }
-
-    @AfterEach
-    public void tearDown() throws ResponseException {
-        // Clear the database after each test
-        serverFacade.clear();
     }
 
     @Test
@@ -233,5 +230,117 @@ public class ServerFacadeTests {
             assertNull(game.whiteUsername(), "White username should be null for new game");
             assertNull(game.blackUsername(), "Black username should be null for new game");
         }
+    }
+
+    @Test
+    public void joinGamePositive() throws ResponseException {
+        // Create a game
+        String gameName = "Test Game";
+        int gameId = serverFacade.createGame(authToken, gameName);
+        assertTrue(gameId > 0, "Game ID should be positive");
+
+        // Join as white
+        serverFacade.joinGame(authToken, gameId, ChessGame.TeamColor.WHITE);
+
+        // Verify the game state
+        var games = serverFacade.listGames(authToken);
+        GameData game = games.get(0);
+        assertEquals(TEST_USERNAME, game.whiteUsername(), "White username should be set");
+        assertNull(game.blackUsername(), "Black username should still be null");
+    }
+
+    @Test
+    public void joinGameBothColors() throws ResponseException {
+        // Create a game
+        String gameName = "Test Game";
+        int gameId = serverFacade.createGame(authToken, gameName);
+
+        // Register a second user
+        String secondUser = "secondUser";
+        String secondAuthToken = serverFacade.register(secondUser, "pass", "second@email.com").authToken();
+
+        // First user joins as white
+        serverFacade.joinGame(authToken, gameId, ChessGame.TeamColor.WHITE);
+
+        // Second user joins as black
+        serverFacade.joinGame(secondAuthToken, gameId, ChessGame.TeamColor.BLACK);
+
+        // Verify the game state
+        var games = serverFacade.listGames(authToken);
+        GameData game = games.get(0);
+        assertEquals(TEST_USERNAME, game.whiteUsername(), "White username should be set");
+        assertEquals(secondUser, game.blackUsername(), "Black username should be set");
+    }
+
+    @Test
+    public void joinGameColorTaken() throws ResponseException {
+        // Create a game
+        String gameName = "Test Game";
+        int gameId = serverFacade.createGame(authToken, gameName);
+
+        // Register a second user
+        String secondUser = "secondUser";
+        String secondAuthToken = serverFacade.register(secondUser, "pass", "second@email.com").authToken();
+
+        // First user joins as white
+        serverFacade.joinGame(authToken, gameId, ChessGame.TeamColor.WHITE);
+
+        // Try to join as white again
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.joinGame(secondAuthToken, gameId, ChessGame.TeamColor.WHITE);
+        });
+        assertEquals(403, exception.getStatusCode(), "Should return 403 for taken color");
+    }
+
+    @Test
+    public void joinGameUnauthorized() {
+        // Try to join a game with invalid auth token
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.joinGame("invalid-token", 1, ChessGame.TeamColor.WHITE);
+        });
+        assertEquals(401, exception.getStatusCode(), "Should return 401 for unauthorized join");
+    }
+
+    @Test
+    public void joinGameNonexistent() throws ResponseException {
+        // Try to join a non-existent game
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.joinGame(authToken, 999, ChessGame.TeamColor.WHITE);
+        });
+        assertEquals(400, exception.getStatusCode(), "Should return 400 for non-existent game");
+    }
+
+    @Test
+    public void observeGamePositive() throws ResponseException {
+        // Create a game
+        String gameName = "Test Game";
+        int gameId = serverFacade.createGame(authToken, gameName);
+
+        // Observe the game
+        serverFacade.observeGame(authToken, gameId);
+
+        // Verify the game state (should be unchanged)
+        var games = serverFacade.listGames(authToken);
+        GameData game = games.get(0);
+        assertNull(game.whiteUsername(), "White username should still be null");
+        assertNull(game.blackUsername(), "Black username should still be null");
+    }
+
+    @Test
+    public void observeGameUnauthorized() {
+        // Try to observe a game with invalid auth token
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.observeGame("invalid-token", 1);
+        });
+        assertEquals(401, exception.getStatusCode(), "Should return 401 for unauthorized observe");
+    }
+
+    @Test
+    public void observeGameNonexistent() throws ResponseException {
+        // Try to observe a non-existent game
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.observeGame(authToken, 999);
+        });
+        assertEquals(400, exception.getStatusCode(), "Should return 400 for non-existent game");
     }
 } 
