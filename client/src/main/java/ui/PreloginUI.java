@@ -46,6 +46,7 @@ public class PreloginUI {
         System.out.println("Goodbye!");
         running = false;
         scanner.close();
+        System.exit(0);  // Force exit the program
     }
 
     private void login() {
@@ -64,8 +65,10 @@ public class PreloginUI {
             System.out.println("Login successful!");
             
             // Transition to post-login UI
-            var postloginUI = new PostloginUI(authData.username(), authData.authToken());
+            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner);
             postloginUI.run();
+            // After postloginUI returns, continue with the prelogin loop
+            running = true;
         } catch (ResponseException e) {
             if (e.getStatusCode() == 401) {
                 System.out.println("Error: Invalid username or password");
@@ -93,8 +96,10 @@ public class PreloginUI {
             System.out.println("Registration successful!");
             
             // Transition to post-login UI
-            var postloginUI = new PostloginUI(authData.username(), authData.authToken());
+            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner);
             postloginUI.run();
+            // After postloginUI returns, continue with the prelogin loop
+            running = true;
         } catch (ResponseException e) {
             if (e.getStatusCode() == 403) {
                 System.out.println("Error: Username already taken");

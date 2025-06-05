@@ -37,15 +37,41 @@ public class ServerFacade {
 
     public void logout(String authToken) throws ResponseException {
         var path = "/session";
-        this.makeRequest("DELETE", path, null, null);
+        try {
+            URL url = (new URI(serverUrl + path)).toURL();
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            http.setRequestMethod("DELETE");
+            http.setDoOutput(false);  // DELETE requests don't need a body
+            http.addRequestProperty("authorization", authToken);
+            http.connect();
+            
+            var status = http.getResponseCode();
+            // Consider both 200 and 401 as successful logout
+            if (status != 200 && status != 401) {
+                throw new ResponseException(status, "failure: " + status);
+            }
+        } catch (Exception ex) {
+            if (ex instanceof ResponseException) {
+                throw (ResponseException) ex;
+            }
+            throw new ResponseException(500, ex.getMessage());
+        }
     }
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
+        return makeRequest(method, path, request, responseClass, null);
+    }
+
+    private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass, String authToken) throws ResponseException {
         try {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
             http.setDoOutput(true);
+
+            if (authToken != null) {
+                http.addRequestProperty("authorization", authToken);
+            }
 
             writeBody(request, http);
             http.connect();

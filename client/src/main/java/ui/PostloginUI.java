@@ -9,13 +9,15 @@ public class PostloginUI {
     private final String username;
     private final String authToken;
     private final ServerFacade serverFacade;
+    private final PreloginUI preloginUI;
     private boolean running;
 
-    public PostloginUI(String username, String authToken) {
-        this.scanner = new Scanner(System.in);
+    public PostloginUI(PreloginUI preloginUI, String username, String authToken, Scanner scanner) {
+        this.scanner = scanner;
         this.username = username;
         this.authToken = authToken;
         this.serverFacade = new ServerFacade("http://localhost:8080");
+        this.preloginUI = preloginUI;
         this.running = true;
     }
 
@@ -30,30 +32,29 @@ public class PostloginUI {
                 case "help" -> showHelp();
                 case "quit" -> quit();
                 case "logout" -> logout();
-                case "create game" -> createGame();
-                case "list games" -> listGames();
-                case "play game" -> playGame();
-                case "observe game" -> observeGame();
+                case "create" -> createGame();
+                case "list" -> listGames();
+                case "join" -> playGame();
+                case "observe" -> observeGame();
                 default -> System.out.println("Unknown command. Type 'help' to see available commands.");
             }
         }
     }
 
     private void showHelp() {
-        System.out.println("\nAvailable commands:");
-        System.out.println("  help         - Display this help message");
-        System.out.println("  quit         - Exit the program");
-        System.out.println("  logout       - Log out of your account");
-        System.out.println("  create game  - Create a new game");
-        System.out.println("  list games   - List all available games");
-        System.out.println("  play game    - Join a game as a player");
-        System.out.println("  observe game - Join a game as an observer");
+        System.out.println("  create <NAME>  - a game");
+        System.out.println("  list           - games");
+        System.out.println("  join <ID> [WHITE|BLACK] - a game");
+        System.out.println("  observe <ID>   - a game");
+        System.out.println("  logout         - when you are done");
+        System.out.println("  quit           - playing chess");
+        System.out.println("  help           - with possible commands");
     }
 
     private void quit() {
         System.out.println("Goodbye!");
         running = false;
-        scanner.close();
+        System.exit(0);
     }
 
     private void logout() {
@@ -61,11 +62,13 @@ public class PostloginUI {
             serverFacade.logout(authToken);
             System.out.println("Successfully logged out!");
             running = false;
-            scanner.close();
-            var preloginUI = new PreloginUI();
-            preloginUI.run();
         } catch (ResponseException e) {
-            System.out.println("Error: " + e.getMessage());
+            if (e.getStatusCode() != 401) {
+                System.out.println("Error: " + e.getMessage());
+            } else {
+                System.out.println("Successfully logged out!");
+            }
+            running = false;
         }
     }
 
