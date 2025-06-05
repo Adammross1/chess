@@ -27,10 +27,12 @@ public class GameService {
     }
 
     public CreateGameResult createGame(CreateGameRequest request) throws DataAccessException {
-        LOGGER.info("Attempting to create game for auth token: " + request.authToken());
+        LOGGER.info("Attempting to create game for auth token: [" + request.authToken() + "]");
         AuthData authData = authDAO.getAuth(request.authToken());
+        LOGGER.info("Auth data result: " + (authData != null ? "Found for user " + authData.username() : "Not found"));
+        
         if (authData == null) {
-            LOGGER.warning("Unauthorized game creation attempt with token: " + request.authToken());
+            LOGGER.warning("Unauthorized game creation attempt with token: [" + request.authToken() + "]");
             throw new DataAccessException("Error: unauthorized");
         }
         LOGGER.info("Auth token valid for user: " + authData.username() + " for game creation.");
@@ -39,7 +41,7 @@ public class GameService {
         ChessGame game = new ChessGame();
         GameData gameData = new GameData(0, null, null, request.gameName(), game);
         int gameID = gameDAO.createGame(gameData);
-         LOGGER.info("Game created with ID: " + gameID + " by user: " + authData.username());
+        LOGGER.info("Game created with ID: " + gameID + " by user: " + authData.username());
 
         return new CreateGameResult(gameID);
     }

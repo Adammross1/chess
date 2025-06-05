@@ -2,7 +2,10 @@ package ui;
 
 import server.ResponseException;
 import server.ServerFacade;
+import model.GameData;
 import java.util.Scanner;
+import java.util.List;
+import java.util.ArrayList;
 
 public class PostloginUI {
     private final Scanner scanner;
@@ -11,14 +14,16 @@ public class PostloginUI {
     private final ServerFacade serverFacade;
     private final PreloginUI preloginUI;
     private boolean running;
+    private List<Integer> gameIds; // Store game IDs for later use
 
-    public PostloginUI(PreloginUI preloginUI, String username, String authToken, Scanner scanner) {
+    public PostloginUI(PreloginUI preloginUI, String username, String authToken, Scanner scanner, ServerFacade serverFacade) {
         this.scanner = scanner;
         this.username = username;
         this.authToken = authToken;
-        this.serverFacade = new ServerFacade("http://localhost:8080");
+        this.serverFacade = serverFacade;
         this.preloginUI = preloginUI;
         this.running = true;
+        this.gameIds = new ArrayList<>();
     }
 
     public void run() {
@@ -73,11 +78,44 @@ public class PostloginUI {
     }
 
     private void createGame() {
-        System.out.println("Create game functionality coming soon!");
+        try {
+            System.out.print("Enter game name: ");
+            String gameName = scanner.nextLine().trim();
+
+            if (gameName.isEmpty()) {
+                System.out.println("Error: Game name cannot be empty.");
+                return;
+            }
+
+            int gameId = serverFacade.createGame(authToken, gameName);
+            System.out.println("Game '" + gameName + "' created with ID: " + gameId);
+        } catch (ResponseException e) {
+            System.out.println("Error creating game: " + e.getMessage());
+        }
     }
 
     private void listGames() {
-        System.out.println("List games functionality coming soon!");
+        try {
+            var games = serverFacade.listGames(authToken);
+            gameIds.clear(); // Clear previous game IDs
+            
+            if (games.isEmpty()) {
+                System.out.println("No games available.");
+            } else {
+                System.out.println("Available games:");
+                for (int i = 0; i < games.size(); i++) {
+                    GameData game = games.get(i);
+                    gameIds.add(game.gameID()); // Store the game ID
+                    
+                    // Display game info with list number
+                    System.out.printf("%d. %s%n", i + 1, game.gameName());
+                    System.out.printf("   White: %s%n", game.whiteUsername() != null ? game.whiteUsername() : "none");
+                    System.out.printf("   Black: %s%n", game.blackUsername() != null ? game.blackUsername() : "none");
+                }
+            }
+        } catch (ResponseException e) {
+            System.out.println("Error listing games: " + e.getMessage());
+        }
     }
 
     private void playGame() {

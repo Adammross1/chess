@@ -69,17 +69,17 @@ public class MySQLAuthDAO implements AuthDAO {
             String authToken = authData.authToken();
             if (authToken == null || authToken.isEmpty()) {
                 authToken = UUID.randomUUID().toString();
-                LOGGER.fine("Generated new auth token: " + authToken);
+                LOGGER.info("Generated new auth token: [" + authToken + "]");
             } else {
-                 LOGGER.fine("Using provided auth token: " + authToken);
+                LOGGER.info("Using provided auth token: [" + authToken + "]");
             }
             
             try (var preparedStatement = conn.prepareStatement(statement)) {
                 preparedStatement.setString(1, authToken);
                 preparedStatement.setString(2, authData.username());
-                LOGGER.info("Executing INSERT statement for auth token: " + authToken);
+                LOGGER.info("Executing INSERT statement for auth token: [" + authToken + "]");
                 preparedStatement.executeUpdate();
-                LOGGER.info("INSERT statement executed successfully for auth token: " + authToken);
+                LOGGER.info("INSERT statement executed successfully for auth token: [" + authToken + "]");
             }
 
             conn.commit(); // Commit transaction
@@ -87,7 +87,7 @@ public class MySQLAuthDAO implements AuthDAO {
             return new AuthData(authToken, authData.username());
         } catch (SQLException ex) {
             LOGGER.severe("SQL Error creating auth token for user " + authData.username() + ": " + ex.getMessage());
-             if (conn != null) {
+            if (conn != null) {
                 try {
                     conn.rollback(); // Rollback transaction
                     LOGGER.warning("Transaction rolled back for creating auth token for user: " + authData.username());
@@ -97,7 +97,7 @@ public class MySQLAuthDAO implements AuthDAO {
             }
             throw new DataAccessException("failed to create auth token", ex);
         } finally {
-             if (conn != null) {
+            if (conn != null) {
                 try {
                     conn.close(); // Close connection
                     LOGGER.info("Database connection closed after creating auth token for user: " + authData.username());
@@ -110,27 +110,27 @@ public class MySQLAuthDAO implements AuthDAO {
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
-        LOGGER.info("Getting auth token: " + authToken);
+        LOGGER.info("Getting auth token: [" + authToken + "]");
         var statement = "SELECT username FROM auth WHERE auth_token = ?";
         try (var conn = DatabaseManager.getConnection();
              var preparedStatement = conn.prepareStatement(statement)) {
             preparedStatement.setString(1, authToken);
-            LOGGER.info("Executing SELECT statement for auth token: " + authToken);
+            LOGGER.info("Executing SELECT statement for auth token: [" + authToken + "]");
             try (var rs = preparedStatement.executeQuery()) {
-                 LOGGER.info("SELECT statement executed for auth token: " + authToken);
+                LOGGER.info("SELECT statement executed for auth token: [" + authToken + "]");
                 if (rs.next()) {
                     String username = rs.getString("username");
                     LOGGER.info("Auth token found for user: " + username);
                     return new AuthData(authToken, username);
                 }
-                LOGGER.info("Auth token not found: " + authToken);
+                LOGGER.warning("Auth token not found in database: [" + authToken + "]");
                 return null;
             }
         } catch (SQLException ex) {
-            LOGGER.severe("SQL Error getting auth token " + authToken + ": " + ex.getMessage());
+            LOGGER.severe("SQL Error getting auth token [" + authToken + "]: " + ex.getMessage());
             throw new DataAccessException("failed to get auth token", ex);
         } finally {
-            LOGGER.info("Finished getAuth for token: " + authToken);
+            LOGGER.info("Finished getAuth for token: [" + authToken + "]");
         }
     }
 

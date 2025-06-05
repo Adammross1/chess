@@ -3,6 +3,7 @@ package dataaccess;
 import model.GameData;
 import chess.ChessGame;
 import chess.ChessPiece;
+import chess.ChessBoard;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.sql.*;
@@ -22,6 +23,7 @@ public class MySQLGameDAO implements GameDAO {
         gson = new GsonBuilder()
             .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
             .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
+            .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
             .create();
          LOGGER.info("MySQLGameDAO initialized");
     }

@@ -42,9 +42,17 @@ public class GameHandler {
         LOGGER.info("Handling createGame request");
         try {
             String authToken = req.headers("authorization");
-             LOGGER.fine("Auth token from headers: " + authToken);
+            LOGGER.info("Auth token from headers: [" + authToken + "]");
+            LOGGER.info("All headers: " + req.headers());
+            
+            // Remove "Bearer " prefix if present
+            if (authToken != null && authToken.startsWith("Bearer ")) {
+                authToken = authToken.substring(7);
+            }
+            
             var body = gson.fromJson(req.body(), Map.class);
             String gameName = (String) body.get("gameName");
+            LOGGER.info("Game name from request: [" + gameName + "]");
 
             if (gameName == null) {
                 LOGGER.warning("Bad request: gameName is null");
@@ -53,12 +61,13 @@ public class GameHandler {
             }
 
             CreateGameRequest request = new CreateGameRequest(authToken, gameName);
-            LOGGER.info("Calling gameService.createGame");
+            LOGGER.info("Calling gameService.createGame with auth token: [" + authToken + "]");
             CreateGameResult result = gameService.createGame(request);
-             LOGGER.info("gameService.createGame returned gameID: " + result.gameID());
+            LOGGER.info("gameService.createGame returned gameID: " + result.gameID());
             res.status(200);
             return gson.toJson(Map.of("gameID", result.gameID()));
         } catch (DataAccessException e) {
+            LOGGER.severe("DataAccessException in createGame: " + e.getMessage());
             return handleDataAccessException(e, res);
         } catch (Exception e) {
             LOGGER.severe("Unexpected error in createGame: " + e.getMessage());
@@ -103,21 +112,27 @@ public class GameHandler {
         LOGGER.info("Handling listGames request");
         try {
             String authToken = req.headers("authorization");
-             LOGGER.fine("Auth token from headers: " + authToken);
+            LOGGER.fine("Auth token from headers: " + authToken);
+            
+            // Remove "Bearer " prefix if present
+            if (authToken != null && authToken.startsWith("Bearer ")) {
+                authToken = authToken.substring(7);
+            }
+            
             ListGamesRequest request = new ListGamesRequest(authToken);
             LOGGER.info("Calling gameService.listGames");
             ListGamesResult result = gameService.listGames(request);
-             LOGGER.info("gameService.listGames returned result: " + result);
+            LOGGER.info("gameService.listGames returned result: " + result);
 
             res.status(200);
-             LOGGER.info("Attempting to serialize games list");
-             Object responseBody = Map.of("games", result.games());
-             LOGGER.fine("Response body object: " + responseBody);
+            LOGGER.info("Attempting to serialize games list");
+            Object responseBody = Map.of("games", result.games());
+            LOGGER.fine("Response body object: " + responseBody);
             return gson.toJson(responseBody);
         } catch (DataAccessException e) {
             return handleDataAccessException(e, res);
         } catch (Exception e) {
-             LOGGER.severe("Unexpected error in listGames: " + e.getMessage());
+            LOGGER.severe("Unexpected error in listGames: " + e.getMessage());
             res.status(500);
             return gson.toJson(Map.of("message", "Error: " + e.getMessage()));
         }

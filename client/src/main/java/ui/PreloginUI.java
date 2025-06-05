@@ -65,7 +65,7 @@ public class PreloginUI {
             System.out.println("Login successful!");
             
             // Transition to post-login UI
-            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner);
+            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner, serverFacade);
             postloginUI.run();
             // After postloginUI returns, continue with the prelogin loop
             running = true;
@@ -96,7 +96,7 @@ public class PreloginUI {
             System.out.println("Registration successful!");
             
             // Transition to post-login UI
-            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner);
+            var postloginUI = new PostloginUI(this, username, authData.authToken(), scanner, serverFacade);
             postloginUI.run();
             // After postloginUI returns, continue with the prelogin loop
             running = true;

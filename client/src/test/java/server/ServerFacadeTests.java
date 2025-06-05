@@ -2,6 +2,7 @@ package server;
 
 import model.AuthData;
 import model.UserData;
+import model.GameData;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -10,10 +11,23 @@ public class ServerFacadeTests {
     private static final String TEST_USERNAME = "testUser";
     private static final String TEST_PASSWORD = "testPass";
     private static final String TEST_EMAIL = "test@example.com";
+    private String authToken;
 
     @BeforeAll
     public static void init() {
         serverFacade = new ServerFacade("http://localhost:8080");
+    }
+
+    @BeforeEach
+    public void setUp() throws ResponseException {
+        // Register a test user and get auth token
+        authToken = serverFacade.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL).authToken();
+    }
+
+    @AfterEach
+    public void tearDown() throws ResponseException {
+        // Clear the database after each test
+        serverFacade.clear();
     }
 
     @Test
@@ -137,5 +151,87 @@ public class ServerFacadeTests {
             serverFacade.logout("invalid-token");
         });
         assertEquals(401, exception.getStatusCode());
+    }
+
+    @Test
+    public void testCreateGameSuccess() throws ResponseException {
+        // First register and login to get an auth token
+        serverFacade.register(TEST_USERNAME, TEST_PASSWORD, TEST_EMAIL);
+        AuthData authData = serverFacade.login(TEST_USERNAME, TEST_PASSWORD);
+
+        // Create a game
+        String gameName = "myNewGame";
+        int gameId = serverFacade.createGame(authData.authToken(), gameName);
+
+        // Verify the response
+        assertTrue(gameId > 0, "Game ID should be a positive integer");
+    }
+
+    @Test
+    public void testCreateGameUnauthorized() {
+        // Attempt to create a game with an invalid auth token
+        ResponseException exception = assertThrows(ResponseException.class, () -> {
+            serverFacade.createGame("invalid-token", "someGame");
+        });
+
+        assertEquals(401, exception.getStatusCode(), "Should return 401 for unauthorized create game");
+    }
+
+    @Test
+    public void listGamesPositive() throws ResponseException {
+        // Create a test game
+        String gameName = "Test Game";
+        int gameId = serverFacade.createGame(authToken, gameName);
+        assertTrue(gameId > 0, "Game ID should be positive");
+
+        // List games
+        var games = serverFacade.listGames(authToken);
+        assertNotNull(games, "Games list should not be null");
+        assertFalse(games.isEmpty(), "Games list should not be empty");
+        assertEquals(1, games.size(), "Should have exactly one game");
+        
+        GameData game = games.get(0);
+        assertEquals(gameName, game.gameName(), "Game name should match");
+        assertEquals(gameId, game.gameID(), "Game ID should match");
+        assertNull(game.whiteUsername(), "White username should be null for new game");
+        assertNull(game.blackUsername(), "Black username should be null for new game");
+    }
+
+    @Test
+    public void listGamesEmpty() throws ResponseException {
+        // List games without creating any
+        var games = serverFacade.listGames(authToken);
+        assertNotNull(games, "Games list should not be null");
+        assertTrue(games.isEmpty(), "Games list should be empty");
+    }
+
+    @Test
+    public void listGamesUnauthorized() {
+        // Try to list games with invalid auth token
+        assertThrows(ResponseException.class, () -> {
+            serverFacade.listGames("invalid-token");
+        }, "Should throw ResponseException for invalid auth token");
+    }
+
+    @Test
+    public void listGamesMultiple() throws ResponseException {
+        // Create multiple games
+        String[] gameNames = {"Game 1", "Game 2", "Game 3"};
+        for (String name : gameNames) {
+            serverFacade.createGame(authToken, name);
+        }
+
+        // List games
+        var games = serverFacade.listGames(authToken);
+        assertNotNull(games, "Games list should not be null");
+        assertEquals(gameNames.length, games.size(), "Should have correct number of games");
+
+        // Verify each game
+        for (int i = 0; i < gameNames.length; i++) {
+            GameData game = games.get(i);
+            assertEquals(gameNames[i], game.gameName(), "Game name should match");
+            assertNull(game.whiteUsername(), "White username should be null for new game");
+            assertNull(game.blackUsername(), "Black username should be null for new game");
+        }
     }
 } 
