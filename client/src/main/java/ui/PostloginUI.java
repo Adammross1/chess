@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessBoard;
 import server.ResponseException;
 import server.ServerFacade;
 import model.GameData;
@@ -15,7 +16,7 @@ public class PostloginUI {
     private final ServerFacade serverFacade;
     private final PreloginUI preloginUI;
     private boolean running;
-    private List<Integer> gameIds; // Store game IDs for later use
+    private final List<Integer> gameIds; // Store game IDs for later use
 
     public PostloginUI(PreloginUI preloginUI, String username, String authToken, Scanner scanner, ServerFacade serverFacade) {
         this.scanner = scanner;
@@ -89,7 +90,7 @@ public class PostloginUI {
             }
 
             int gameId = serverFacade.createGame(authToken, gameName);
-            System.out.println("Game '" + gameName + "' created with ID: " + gameId);
+            System.out.println("Game '" + gameName);
         } catch (ResponseException e) {
             System.out.println("Error creating game: " + e.getMessage());
         }
@@ -155,13 +156,14 @@ public class PostloginUI {
             // Join the game
             int gameId = gameIds.get(gameNum - 1);
             serverFacade.joinGame(authToken, gameId, color);
-            System.out.println("Successfully joined game as " + color);
+            ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
+            ChessBoardRenderer.render(board, colorStr);
+            System.out.println("Playing as " + colorStr);
             
             // TODO: Transition to gameplay UI
-            System.out.println("Gameplay UI coming soon!");
             
         } catch (ResponseException e) {
-            System.out.println("Error joining game: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
@@ -190,10 +192,11 @@ public class PostloginUI {
             // Observe the game
             int gameId = gameIds.get(gameNum - 1);
             serverFacade.observeGame(authToken, gameId);
-            System.out.println("Successfully joined game as observer");
+            ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
+            ChessBoardRenderer.render(board, "observer");
+            System.out.println("Observing the game from the WHITE team's perspective.");
             
             // TODO: Transition to gameplay UI
-            System.out.println("Gameplay UI coming soon!");
             
         } catch (ResponseException e) {
             System.out.println("Error observing game: " + e.getMessage());

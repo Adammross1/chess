@@ -9,6 +9,7 @@ import model.GameData;
 import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessBoard;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -159,6 +160,34 @@ public class ServerFacade {
             }
         } catch (Exception e) {
             throw new ResponseException(500, "Error clearing database: " + e.getMessage());
+        }
+    }
+
+    public ChessBoard getGameBoard(String authToken, int gameId) throws ResponseException {
+        try {
+            URL url = new URI(serverUrl + "/game/" + gameId).toURL();
+            HttpURLConnection http = (HttpURLConnection) url.openConnection();
+            http.setRequestMethod("GET");
+            http.setDoOutput(false);
+            http.setRequestProperty("Authorization", "Bearer " + authToken);
+            http.setRequestProperty("Content-Type", "application/json");
+
+            int statusCode = http.getResponseCode();
+            if (statusCode != 200) {
+                throw new ResponseException(statusCode, "Failed to retrieve game board");
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(http.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+                var gameData = gson.fromJson(response.toString(), GameData.class);
+                return gameData.game().getBoard();
+            }
+        } catch (Exception e) {
+            throw new ResponseException(500, "Error retrieving game board: " + e.getMessage());
         }
     }
 

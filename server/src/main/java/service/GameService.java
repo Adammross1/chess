@@ -63,6 +63,11 @@ public class GameService {
         LOGGER.info("Game found with ID: " + request.gameID() + " for join attempt.");
 
         String username = authData.username();
+        if (request.playerColor() == null) {
+            // Observer: do not update players, just allow access
+            LOGGER.info("User " + username + " joined as OBSERVER in game ID: " + request.gameID());
+            return new JoinGameResult();
+        }
         if (request.playerColor().equalsIgnoreCase("WHITE")) {
             if (game.whiteUsername() != null) {
                  LOGGER.warning("White spot already taken for game ID: " + request.gameID());
@@ -100,5 +105,17 @@ public class GameService {
         LOGGER.info("gameDAO.listGames() returned " + games.size() + " games.");
 
         return new ListGamesResult(games);
+    }
+
+    public GameData getGame(String authToken, int gameID) throws DataAccessException {
+        AuthData authData = authDAO.getAuth(authToken);
+        if (authData == null) {
+            throw new DataAccessException("Error: unauthorized");
+        }
+        GameData game = gameDAO.getGame(gameID);
+        if (game == null) {
+            throw new DataAccessException("Error: game not found");
+        }
+        return game;
     }
 }

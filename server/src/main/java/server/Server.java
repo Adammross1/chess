@@ -8,11 +8,23 @@ import service.ClearService;
 import service.GameService;
 import service.UserService;
 import spark.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import chess.ChessGame;
+import chess.ChessBoard;
+import chess.ChessPiece;
+import dataaccess.ChessGameAdapter;
+import dataaccess.ChessBoardAdapter;
+import dataaccess.ChessPieceAdapter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 public class Server {
     private final UserHandler userHandler;
     private final GameHandler gameHandler;
     private final ClearHandler clearHandler;
+    private final Gson gson;
 
     public Server() {
         try {
@@ -29,7 +41,12 @@ public class Server {
             ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
 
             userHandler = new UserHandler(userService);
-            gameHandler = new GameHandler(gameService);
+            gson = new GsonBuilder()
+                .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
+                .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
+                .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
+                .create();
+            gameHandler = new GameHandler(gameService, gson);
             clearHandler = new ClearHandler(clearService);
         } catch (DataAccessException e) {
             throw new RuntimeException("Failed to initialize server: " + e.getMessage(), e);
@@ -39,11 +56,16 @@ public class Server {
     public int run(int desiredPort) {
         Spark.port(desiredPort);
 
-        Spark.staticFiles.location("web");
+        // Spark.staticFiles.location("web");
 
         registerEndpoints();
 
         setupExceptionHandling();
+
+        Spark.before((req, res) -> {
+            String logMsg = "Incoming request: " + req.requestMethod() + " " + req.pathInfo();
+            System.out.println(logMsg);
+        });
 
         Spark.awaitInitialization();
         return Spark.port();
@@ -54,15 +76,25 @@ public class Server {
         Spark.post("/session", userHandler::login);
         Spark.delete("/session", userHandler::logout);
 
+        Spark.get("/game/:id", gameHandler::getGame);
         Spark.get("/game", gameHandler::listGames);
         Spark.post("/game", gameHandler::createGame);
         Spark.put("/game", gameHandler::joinGame);
 
         Spark.delete("/db", clearHandler::clearApplication);
+
+        Spark.get("/*", (req, res) -> {
+            String logMsg = "UNMATCHED GET: " + req.pathInfo();
+            System.out.println(logMsg);
+            res.status(404);
+            return "{\"message\": \"Not found\"}";
+        });
     }
 
     private void setupExceptionHandling() {
         Spark.exception(Exception.class, (e, req, res) -> {
+            String logMsg = "Exception: " + e.getMessage();
+            System.err.println(logMsg);
             res.status(500);
             res.body("{ \"message\": \"Error: " + e.getMessage() + "\" }");
         });

@@ -14,6 +14,7 @@ public class PreloginUI {
     public PreloginUI() {
         this.scanner = new Scanner(System.in);
         this.serverFacade = new ServerFacade("http://localhost:8080");
+
         this.running = true;
     }
 

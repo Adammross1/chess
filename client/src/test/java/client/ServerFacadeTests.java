@@ -16,7 +16,8 @@ public class ServerFacadeTests {
 
     @BeforeAll
     public static void init() {
-        serverFacade = new ServerFacade("http://localhost:8080");
+        // this.serverFacade = new ServerFacade("http://localhost:4567");
+        this.serverFacade = new ServerFacade("http://localhost:8080");
     }
 
     @BeforeEach
