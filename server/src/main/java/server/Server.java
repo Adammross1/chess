@@ -19,8 +19,21 @@ import dataaccess.ChessPieceAdapter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.logging.*;
 
 public class Server {
+    static {
+        try {
+            Handler fileHandler = new FileHandler("server.log", true);
+            fileHandler.setFormatter(new SimpleFormatter());
+            Logger rootLogger = Logger.getLogger("");
+            rootLogger.addHandler(fileHandler);
+            rootLogger.setLevel(Level.ALL);
+        } catch (Exception e) {
+            System.err.println("Failed to set up file logging: " + e.getMessage());
+        }
+    }
+
     private final UserHandler userHandler;
     private final GameHandler gameHandler;
     private final ClearHandler clearHandler;

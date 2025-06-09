@@ -170,7 +170,7 @@ public class GameHandler {
             }
             int gameId;
             try {
-                String gameIdParam = req.params(":gameId");
+                String gameIdParam = req.params(":id");
                 LOGGER.info("Extracted gameId param: " + gameIdParam);
                 gameId = Integer.parseInt(gameIdParam);
             } catch (NumberFormatException e) {
@@ -180,8 +180,10 @@ public class GameHandler {
             }
             GameData game = gameService.getGame(authToken, gameId);
             LOGGER.info("GameData fetched successfully for gameId: " + gameId);
+            String json = gson.toJson(game);
+            LOGGER.info("Serialized GameData JSON: " + json);
             res.status(200);
-            return gson.toJson(game);
+            return json;
         } catch (DataAccessException e) {
             LOGGER.severe("DataAccessException in getGame: " + e.getMessage());
             return handleDataAccessException(e, res);

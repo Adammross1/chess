@@ -145,27 +145,31 @@ public class MySQLGameDAO implements GameDAO {
                 if (rs.next()) {
                     String gameStateJson = rs.getString("game_state");
                     LOGGER.fine("Retrieved game state JSON for ID " + gameID + ": " + gameStateJson);
-                    ChessGame game = gson.fromJson(gameStateJson, ChessGame.class);
-                    LOGGER.fine("Deserialized game state for ID " + gameID + ": " + game);
+                    ChessGame game = null;
+                    try {
+                        game = gson.fromJson(gameStateJson, ChessGame.class);
+                        LOGGER.fine("Deserialized game state for ID " + gameID + ": " + game);
+                    } catch (Exception ex) {
+                        LOGGER.severe("Error deserializing game state for ID " + gameID + ": " + ex.getMessage());
+                        throw ex;
+                    }
                     LOGGER.info("Game found with ID: " + gameID);
-
-                    return new GameData(
+                    GameData gameData = new GameData(
                         rs.getInt("id"),
                         rs.getString("white_username"),
                         rs.getString("black_username"),
                         rs.getString("game_name"),
                         game
                     );
+                    LOGGER.info("Returning GameData: " + gameData);
+                    return gameData;
                 }
                 LOGGER.info("Game not found with ID: " + gameID);
                 return null;
             }
-        } catch (SQLException ex) {
-             LOGGER.severe("SQL Error getting game with ID " + gameID + ": " + ex.getMessage());
+        } catch (Exception ex) {
+            LOGGER.severe("Error getting game with ID " + gameID + ": " + ex.getMessage());
             throw new DataAccessException("failed to get game", ex);
-        } catch (JsonSyntaxException ex) {
-            LOGGER.severe("JSON Syntax Error getting game with ID " + gameID + ": " + ex.getMessage());
-            throw new DataAccessException("failed to deserialize game state", ex);
         } finally {
             LOGGER.info("Finished getGame for ID: " + gameID);
         }

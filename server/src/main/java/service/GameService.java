@@ -108,14 +108,18 @@ public class GameService {
     }
 
     public GameData getGame(String authToken, int gameID) throws DataAccessException {
+        LOGGER.info("GameService.getGame called with authToken: " + authToken + ", gameID: " + gameID);
         AuthData authData = authDAO.getAuth(authToken);
         if (authData == null) {
+            LOGGER.warning("AuthData not found for token: " + authToken);
             throw new DataAccessException("Error: unauthorized");
         }
         GameData game = gameDAO.getGame(gameID);
         if (game == null) {
+            LOGGER.warning("GameData not found for gameID: " + gameID);
             throw new DataAccessException("Error: game not found");
         }
+        LOGGER.info("GameData found for gameID: " + gameID + ", game: " + game);
         return game;
     }
 }
