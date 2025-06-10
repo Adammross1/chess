@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import websocket.messages.ServerMessage;
+import chess.ChessGame;
+import chess.ChessBoard;
+import ui.ChessBoardRenderer;
 
 /**
  * Manages a persistent WebSocket connection to the server for gameplay communication.
@@ -17,6 +21,8 @@ public class WebsocketCommunicator {
     private final String serverUrl;
     private final Gson gson = new Gson();
     private final CountDownLatch connectLatch = new CountDownLatch(1);
+    private BoardUpdateHandler boardUpdateHandler;
+    private String playerPerspective = "observer";
 
     public WebsocketCommunicator(String serverUrl) {
         this.serverUrl = serverUrl;
@@ -74,6 +80,35 @@ public class WebsocketCommunicator {
         return session != null && session.isOpen();
     }
 
+    public void setBoardUpdateHandler(BoardUpdateHandler handler) {
+        this.boardUpdateHandler = handler;
+    }
+
+    public void setPlayerPerspective(String perspective) {
+        this.playerPerspective = perspective;
+    }
+
+    @OnMessage
+    public void onMessage(String message) {
+        // Deserialize the server message
+        ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+        if (serverMessage.getServerMessageType() == ServerMessage.ServerMessageType.LOAD_GAME) {
+            ChessGame game = serverMessage.getGame();
+            ChessBoard board = (game != null) ? game.getBoard() : null;
+            // Perspective logic:
+            // - If user is playing white, white pieces are at the bottom ("white")
+            // - If user is playing black, black pieces are at the bottom ("black")
+            // - If user is observing, white pieces are always at the bottom ("observer")
+            if (boardUpdateHandler != null) {
+                boardUpdateHandler.updateBoard(board, playerPerspective);
+            } else {
+                // Fallback: render directly
+                ChessBoardRenderer.render(board, playerPerspective);
+            }
+        }
+        // Handle other message types as needed
+    }
+
     // Add more methods for sending/receiving gameplay commands as needed.
 }
 
@@ -88,4 +123,9 @@ class UserGameCommand {
         this.authToken = authToken;
         this.gameID = gameID;
     }
+}
+
+// Handler interface for UI updates
+interface BoardUpdateHandler {
+    void updateBoard(ChessBoard board, String perspective);
 } 
