@@ -10,6 +10,7 @@ import websocket.messages.ServerMessage;
 import chess.ChessGame;
 import chess.ChessBoard;
 import ui.ChessBoardRenderer;
+import websocket.commands.UserGameCommand;
 
 /**
  * Manages a persistent WebSocket connection to the server for gameplay communication.
@@ -109,20 +110,30 @@ public class WebsocketCommunicator {
         // Handle other message types as needed
     }
 
-    // Add more methods for sending/receiving gameplay commands as needed.
-}
-
-// Dummy UserGameCommand for demonstration. Replace with actual implementation if available.
-class UserGameCommand {
-    private final String commandType;
-    private final String authToken;
-    private final int gameID;
-
-    public UserGameCommand(String commandType, String authToken, int gameID) {
-        this.commandType = commandType;
-        this.authToken = authToken;
-        this.gameID = gameID;
+    public void sendLeaveCommand(String authToken, int gameID) throws IOException {
+        UserGameCommand leaveCommand = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
+        String json = gson.toJson(leaveCommand);
+        if (session != null && session.isOpen()) {
+            session.getBasicRemote().sendText(json);
+        }
     }
+
+    /**
+     * Closes the WebSocket connection and stops receiving updates.
+     */
+    public void closeAndCleanup() {
+        try {
+            if (session != null && session.isOpen()) {
+                session.close();
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
+        session = null;
+        boardUpdateHandler = null;
+    }
+
+    // Add more methods for sending/receiving gameplay commands as needed.
 }
 
 // Handler interface for UI updates

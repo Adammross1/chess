@@ -6,6 +6,10 @@ public class GameplayUI {
     private final Scanner scanner;
     private chess.ChessBoard currentBoard;
     private String perspective = "observer";
+    private server.WebsocketCommunicator communicator;
+    private String authToken;
+    private int gameID;
+    private PostloginUI postloginUI;
 
     public GameplayUI(Scanner scanner) {
         this.scanner = scanner;
@@ -17,6 +21,22 @@ public class GameplayUI {
 
     public void setPerspective(String perspective) {
         this.perspective = perspective;
+    }
+
+    public void setCommunicator(server.WebsocketCommunicator communicator) {
+        this.communicator = communicator;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
+    }
+
+    public void setGameID(int gameID) {
+        this.gameID = gameID;
+    }
+
+    public void setPostloginUI(PostloginUI postloginUI) {
+        this.postloginUI = postloginUI;
     }
 
     public void redrawBoard() {
@@ -32,6 +52,7 @@ public class GameplayUI {
         switch (command.trim().toLowerCase()) {
             case "help" -> showHelp();
             case "redraw" -> redrawBoard();
+            case "leave" -> handleLeave();
             // Add other commands here
             default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
         }
@@ -51,4 +72,21 @@ public class GameplayUI {
         System.out.println("--------------------------------------------------------------\n");
     }
 
+    /**
+     * Handles the leave command: sends LEAVE, closes WebSocket, and transitions to PostloginUI.
+     */
+    private void handleLeave() {
+        try {
+            if (communicator != null) {
+                communicator.sendLeaveCommand(authToken, gameID);
+                communicator.closeAndCleanup();
+            }
+        } catch (Exception e) {
+            System.out.println("Error sending leave command: " + e.getMessage());
+        }
+        System.out.println("You have left the game. Returning to main menu...");
+        if (postloginUI != null) {
+            postloginUI.run();
+        }
+    }
 } 
