@@ -4,7 +4,10 @@ import java.util.Scanner;
 import chess.ChessMove;
 import chess.ChessPosition;
 import chess.ChessPiece;
+import chess.ChessGame;
 import java.io.IOException;
+import java.util.Set;
+import java.util.HashSet;
 
 public class GameplayUI {
     private final Scanner scanner;
@@ -72,7 +75,7 @@ public class GameplayUI {
                     handleResign();
                 }
             }
-            // Add other commands here
+            case "highlight" -> handleHighlightLegalMoves();
             default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
         }
     }
@@ -176,6 +179,58 @@ public class GameplayUI {
         } catch (IOException e) {
             System.out.println("Error sending resign command: " + e.getMessage());
         }
+    }
+
+    /**
+     * Handles the highlight legal moves command by prompting for a piece position
+     * and highlighting all legal moves for that piece.
+     */
+    private void handleHighlightLegalMoves() {
+        if (currentBoard == null) {
+            System.out.println("No board to display.");
+            return;
+        }
+
+        // Get piece position
+        System.out.print("Enter piece position to highlight (e.g., 'e2'): ");
+        String posStr = scanner.nextLine().trim().toLowerCase();
+        ChessPosition pos = parseChessSquare(posStr);
+        if (pos == null) {
+            System.out.println("Invalid position. Use format 'e2' (a-h, 1-8)");
+            return;
+        }
+
+        // Get the piece at the position
+        ChessPiece piece = currentBoard.getPiece(pos);
+        if (piece == null) {
+            System.out.println("No piece at that position.");
+            ChessBoardRenderer.clearHighlights();
+            redrawBoard();
+            return;
+        }
+
+        // Get all legal moves for the piece
+        Set<ChessPosition> legalMoves = new HashSet<>();
+        legalMoves.add(pos); // Add the piece's current position
+
+        // Add all possible moves for this piece type
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition endPos = new ChessPosition(row, col);
+                ChessMove move = new ChessMove(pos, endPos, null);
+                try {
+                    if (currentBoard.getPiece(pos).pieceMoves(currentBoard, pos).contains(move)) {
+                        legalMoves.add(endPos);
+                    }
+                } catch (Exception e) {
+                    // Skip invalid moves
+                }
+            }
+        }
+
+        // Highlight the moves and redraw the board
+        ChessBoardRenderer.setHighlightedSquares(legalMoves);
+        redrawBoard();
     }
 
     /**

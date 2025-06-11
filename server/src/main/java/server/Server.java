@@ -16,28 +16,14 @@ import chess.ChessPiece;
 import dataaccess.ChessGameAdapter;
 import dataaccess.ChessBoardAdapter;
 import dataaccess.ChessPieceAdapter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.logging.*;
+import websocket.WebSocketHandler;
 
 public class Server {
-    static {
-        try {
-            Handler fileHandler = new FileHandler("server.log", true);
-            fileHandler.setFormatter(new SimpleFormatter());
-            Logger rootLogger = Logger.getLogger("");
-            rootLogger.addHandler(fileHandler);
-            rootLogger.setLevel(Level.ALL);
-        } catch (Exception e) {
-            System.err.println("Failed to set up file logging: " + e.getMessage());
-        }
-    }
-
     private final UserHandler userHandler;
     private final GameHandler gameHandler;
     private final ClearHandler clearHandler;
     private final Gson gson;
+    private final WebSocketHandler webSocketHandler;
 
     public Server() {
         try {
@@ -61,6 +47,7 @@ public class Server {
                 .create();
             gameHandler = new GameHandler(gameService, gson);
             clearHandler = new ClearHandler(clearService);
+            webSocketHandler = new WebSocketHandler(gameService, authDAO, gson);
         } catch (DataAccessException e) {
             throw new RuntimeException("Failed to initialize server: " + e.getMessage(), e);
         }
@@ -85,6 +72,10 @@ public class Server {
     }
 
     private void registerEndpoints() {
+        // Register WebSocket endpoint first
+        Spark.webSocket("/ws", webSocketHandler);
+
+        // Register HTTP endpoints
         Spark.post("/user", userHandler::register);
         Spark.post("/session", userHandler::login);
         Spark.delete("/session", userHandler::logout);
@@ -96,7 +87,12 @@ public class Server {
 
         Spark.delete("/db", clearHandler::clearApplication);
 
+        // Catch-all handler for unmatched GET requests, but exclude /ws
         Spark.get("/*", (req, res) -> {
+            // Skip WebSocket endpoint
+            if (req.pathInfo().equals("/ws")) {
+                return null;
+            }
             String logMsg = "UNMATCHED GET: " + req.pathInfo();
             System.out.println(logMsg);
             res.status(404);

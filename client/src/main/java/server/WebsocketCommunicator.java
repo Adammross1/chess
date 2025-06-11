@@ -70,7 +70,7 @@ public class WebsocketCommunicator {
      * Sends a CONNECT UserGameCommand to the server.
      */
     private void sendConnectCommand(String authToken, int gameID) throws IOException {
-        UserGameCommand connectCommand = new UserGameCommand("CONNECT", authToken, gameID);
+        UserGameCommand connectCommand = new UserGameCommand(UserGameCommand.CommandType.CONNECT, authToken, gameID);
         String json = gson.toJson(connectCommand);
         session.getBasicRemote().sendText(json);
     }
@@ -170,7 +170,4 @@ public class WebsocketCommunicator {
     // Add more methods for sending/receiving gameplay commands as needed.
 }
 
-// Handler interface for UI updates
-interface BoardUpdateHandler {
-    void updateBoard(ChessBoard board, String perspective);
-} 
+// Move BoardUpdateHandler to its own file 

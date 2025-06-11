@@ -265,4 +265,12 @@ public class ServerFacade {
     }
 
     private record JoinGameRequest(ChessGame.TeamColor playerColor, int gameID) {}
+
+    /**
+     * Returns the server URL used by this facade.
+     * @return The server URL
+     */
+    public String getServerUrl() {
+        return serverUrl;
+    }
 } 

@@ -3,6 +3,7 @@ package ui;
 import chess.ChessBoard;
 import server.ResponseException;
 import server.ServerFacade;
+import server.WebsocketCommunicator;
 import model.GameData;
 import chess.ChessGame;
 import java.util.Scanner;
@@ -157,10 +158,32 @@ public class PostloginUI {
             int gameId = gameIds.get(gameNum - 1);
             serverFacade.joinGame(authToken, gameId, color);
             ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
-            ChessBoardRenderer.render(board, colorStr);
-            System.out.println("Playing as " + colorStr);
             
-            // TODO: Transition to gameplay UI
+            // Create and setup GameplayUI
+            GameplayUI gameplayUI = new GameplayUI(scanner);
+            gameplayUI.setBoard(board);
+            gameplayUI.setPerspective(colorStr);
+            gameplayUI.setAuthToken(authToken);
+            gameplayUI.setGameID(gameId);
+            gameplayUI.setPostloginUI(this);
+
+            // Setup WebSocket connection
+            WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
+            communicator.setBoardUpdateHandler((updatedBoard, perspective) -> {
+                gameplayUI.setBoard(updatedBoard);
+                gameplayUI.redrawBoard();
+            });
+            communicator.setPlayerPerspective(colorStr);
+            gameplayUI.setCommunicator(communicator);
+
+            // Connect to WebSocket and start gameplay
+            try {
+                communicator.connect(authToken, gameId);
+                System.out.println("Connected to game. Type 'help' to see available commands.");
+                gameplayLoop(gameplayUI);
+            } catch (Exception e) {
+                System.out.println("Error connecting to game: " + e.getMessage());
+            }
             
         } catch (ResponseException e) {
             System.out.println(e.getMessage());
@@ -193,13 +216,47 @@ public class PostloginUI {
             int gameId = gameIds.get(gameNum - 1);
             serverFacade.observeGame(authToken, gameId);
             ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
-            ChessBoardRenderer.render(board, "observer");
-            System.out.println("Observing the game from the WHITE team's perspective.");
             
-            // TODO: Transition to gameplay UI
+            // Create and setup GameplayUI
+            GameplayUI gameplayUI = new GameplayUI(scanner);
+            gameplayUI.setBoard(board);
+            gameplayUI.setPerspective("observer");
+            gameplayUI.setAuthToken(authToken);
+            gameplayUI.setGameID(gameId);
+            gameplayUI.setPostloginUI(this);
+
+            // Setup WebSocket connection
+            WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
+            communicator.setBoardUpdateHandler((updatedBoard, perspective) -> {
+                gameplayUI.setBoard(updatedBoard);
+                gameplayUI.redrawBoard();
+            });
+            communicator.setPlayerPerspective("observer");
+            gameplayUI.setCommunicator(communicator);
+
+            // Connect to WebSocket and start gameplay
+            try {
+                communicator.connect(authToken, gameId);
+                System.out.println("Connected to game as observer. Type 'help' to see available commands.");
+                gameplayLoop(gameplayUI);
+            } catch (Exception e) {
+                System.out.println("Error connecting to game: " + e.getMessage());
+            }
             
         } catch (ResponseException e) {
             System.out.println("Error observing game: " + e.getMessage());
+        }
+    }
+
+    private void gameplayLoop(GameplayUI gameplayUI) {
+        while (true) {
+            System.out.print("\n[GAME] >>> ");
+            String command = scanner.nextLine().trim();
+            if (command.equalsIgnoreCase("leave")) {
+                gameplayUI.handleCommand(command);
+                break;
+            }
+            gameplayUI.handleCommand(command);
         }
     }
 } 
