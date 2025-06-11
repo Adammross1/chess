@@ -24,7 +24,12 @@ public class WebsocketCommunicator {
     private final Gson gson = new Gson();
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private BoardUpdateHandler boardUpdateHandler;
+    private NotificationHandler notificationHandler;
     private String playerPerspective = "observer";
+
+    public interface NotificationHandler {
+        void onNotification(String message);
+    }
 
     public WebsocketCommunicator(String serverUrl) {
         this.serverUrl = serverUrl;
@@ -90,6 +95,10 @@ public class WebsocketCommunicator {
         this.playerPerspective = perspective;
     }
 
+    public void setNotificationHandler(NotificationHandler handler) {
+        this.notificationHandler = handler;
+    }
+
     @OnMessage
     public void onMessage(String message) {
         try {
@@ -132,6 +141,9 @@ public class WebsocketCommunicator {
                     String notification = serverMessage.getMessage();
                     if (notification != null) {
                         System.out.println(notification);
+                        if (notificationHandler != null) {
+                            notificationHandler.onNotification(notification);
+                        }
                     }
                 }
             }

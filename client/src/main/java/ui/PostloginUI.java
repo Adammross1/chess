@@ -212,14 +212,11 @@ public class PostloginUI {
                 return;
             }
 
-            // Observe the game
+            // Get the game ID and connect directly via WebSocket
             int gameId = gameIds.get(gameNum - 1);
-            serverFacade.observeGame(authToken, gameId);
-            ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
             
             // Create and setup GameplayUI
             GameplayUI gameplayUI = new GameplayUI(scanner);
-            gameplayUI.setBoard(board);
             gameplayUI.setPerspective("observer");
             gameplayUI.setAuthToken(authToken);
             gameplayUI.setGameID(gameId);
@@ -243,7 +240,7 @@ public class PostloginUI {
                 System.out.println("Error connecting to game: " + e.getMessage());
             }
             
-        } catch (ResponseException e) {
+        } catch (Exception e) {
             System.out.println("Error observing game: " + e.getMessage());
         }
     }
