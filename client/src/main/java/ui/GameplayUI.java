@@ -14,6 +14,7 @@ public class GameplayUI {
     private String authToken;
     private int gameID;
     private PostloginUI postloginUI;
+    private boolean hasResigned = false;
 
     public GameplayUI(Scanner scanner) {
         this.scanner = scanner;
@@ -57,7 +58,20 @@ public class GameplayUI {
             case "help" -> showHelp();
             case "redraw" -> redrawBoard();
             case "leave" -> handleLeave();
-            case "move" -> handleMakeMove();
+            case "move" -> {
+                if (hasResigned) {
+                    System.out.println("You have resigned and cannot make moves.");
+                } else {
+                    handleMakeMove();
+                }
+            }
+            case "resign" -> {
+                if (hasResigned) {
+                    System.out.println("You have already resigned.");
+                } else {
+                    handleResign();
+                }
+            }
             // Add other commands here
             default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
         }
@@ -133,6 +147,34 @@ public class GameplayUI {
             System.out.println("Error sending move: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("Error processing move: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles the resign command by prompting for confirmation and sending the resign command.
+     * After resigning, the player remains in the game as an observer.
+     */
+    private void handleResign() {
+        if (communicator == null) {
+            System.out.println("Error: Not connected to game server");
+            return;
+        }
+
+        // Prompt for confirmation
+        System.out.println("Are you sure you want to resign? This will forfeit the game. (yes/no)");
+        String response = scanner.nextLine().trim().toLowerCase();
+        
+        if (!response.equals("yes")) {
+            System.out.println("Resignation cancelled.");
+            return;
+        }
+
+        try {
+            communicator.sendResignCommand(authToken, gameID);
+            hasResigned = true;
+            System.out.println("You have resigned the game. You will remain as an observer.");
+        } catch (IOException e) {
+            System.out.println("Error sending resign command: " + e.getMessage());
         }
     }
 

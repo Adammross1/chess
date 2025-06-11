@@ -137,6 +137,22 @@ public class WebsocketCommunicator {
     }
 
     /**
+     * Sends a RESIGN UserGameCommand to the server.
+     * @param authToken The user's auth token
+     * @param gameID The game ID
+     * @throws IOException if the WebSocket send fails
+     */
+    public void sendResignCommand(String authToken, int gameID) throws IOException {
+        UserGameCommand resignCommand = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
+        String json = gson.toJson(resignCommand);
+        if (session != null && session.isOpen()) {
+            session.getBasicRemote().sendText(json);
+        } else {
+            throw new IOException("WebSocket is not connected");
+        }
+    }
+
+    /**
      * Closes the WebSocket connection and stops receiving updates.
      */
     public void closeAndCleanup() {
