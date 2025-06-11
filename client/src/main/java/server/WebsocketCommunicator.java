@@ -11,6 +11,7 @@ import chess.ChessGame;
 import chess.ChessBoard;
 import ui.ChessBoardRenderer;
 import websocket.commands.UserGameCommand;
+import chess.ChessMove;
 
 /**
  * Manages a persistent WebSocket connection to the server for gameplay communication.
@@ -115,6 +116,23 @@ public class WebsocketCommunicator {
         String json = gson.toJson(leaveCommand);
         if (session != null && session.isOpen()) {
             session.getBasicRemote().sendText(json);
+        }
+    }
+
+    /**
+     * Sends a MAKE_MOVE UserGameCommand to the server.
+     * @param authToken The user's auth token
+     * @param gameID The game ID
+     * @param move The chess move to make
+     * @throws IOException if the WebSocket send fails
+     */
+    public void sendMakeMoveCommand(String authToken, int gameID, ChessMove move) throws IOException {
+        UserGameCommand moveCommand = new UserGameCommand(UserGameCommand.CommandType.MAKE_MOVE, authToken, gameID, move);
+        String json = gson.toJson(moveCommand);
+        if (session != null && session.isOpen()) {
+            session.getBasicRemote().sendText(json);
+        } else {
+            throw new IOException("WebSocket is not connected");
         }
     }
 

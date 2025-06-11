@@ -1,6 +1,10 @@
 package ui;
 
 import java.util.Scanner;
+import chess.ChessMove;
+import chess.ChessPosition;
+import chess.ChessPiece;
+import java.io.IOException;
 
 public class GameplayUI {
     private final Scanner scanner;
@@ -53,6 +57,7 @@ public class GameplayUI {
             case "help" -> showHelp();
             case "redraw" -> redrawBoard();
             case "leave" -> handleLeave();
+            case "move" -> handleMakeMove();
             // Add other commands here
             default -> System.out.println("Unknown command. Type 'help' for a list of commands.");
         }
@@ -88,5 +93,72 @@ public class GameplayUI {
         if (postloginUI != null) {
             postloginUI.run();
         }
+    }
+
+    /**
+     * Handles the make move command by prompting for start and end positions,
+     * validating the input, and sending the move to the server.
+     */
+    private void handleMakeMove() {
+        if (communicator == null) {
+            System.out.println("Error: Not connected to game server");
+            return;
+        }
+
+        try {
+            // Get start position
+            System.out.print("Enter start position (e.g., 'e2'): ");
+            String startPos = scanner.nextLine().trim().toLowerCase();
+            ChessPosition start = parseChessSquare(startPos);
+            if (start == null) {
+                System.out.println("Invalid start position. Use format 'e2' (a-h, 1-8)");
+                return;
+            }
+
+            // Get end position
+            System.out.print("Enter end position (e.g., 'e4'): ");
+            String endPos = scanner.nextLine().trim().toLowerCase();
+            ChessPosition end = parseChessSquare(endPos);
+            if (end == null) {
+                System.out.println("Invalid end position. Use format 'e4' (a-h, 1-8)");
+                return;
+            }
+
+            // Create and send the move
+            ChessMove move = new ChessMove(start, end, null); // No promotion piece for now
+            communicator.sendMakeMoveCommand(authToken, gameID, move);
+            System.out.println("Move sent to server. Waiting for update...");
+
+        } catch (IOException e) {
+            System.out.println("Error sending move: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error processing move: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parses a chess square string (e.g., "e2") into a ChessPosition.
+     * @param square The square string to parse (e.g., "e2")
+     * @return The ChessPosition, or null if invalid
+     */
+    private ChessPosition parseChessSquare(String square) {
+        if (square == null || square.length() != 2) {
+            return null;
+        }
+
+        char file = square.charAt(0);
+        char rank = square.charAt(1);
+
+        // Convert file (a-h) to column (1-8)
+        int column = file - 'a' + 1;
+        // Convert rank (1-8) to row (1-8)
+        int row = rank - '0';
+
+        // Validate the position is on the board
+        if (column < 1 || column > 8 || row < 1 || row > 8) {
+            return null;
+        }
+
+        return new ChessPosition(row, column);
     }
 } 
