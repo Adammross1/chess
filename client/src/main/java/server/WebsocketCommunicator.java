@@ -92,23 +92,56 @@ public class WebsocketCommunicator {
 
     @OnMessage
     public void onMessage(String message) {
-        // Deserialize the server message
-        ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-        if (serverMessage.getServerMessageType() == ServerMessage.ServerMessageType.LOAD_GAME) {
-            ChessGame game = serverMessage.getGame();
-            ChessBoard board = (game != null) ? game.getBoard() : null;
-            // Perspective logic:
-            // - If user is playing white, white pieces are at the bottom ("white")
-            // - If user is playing black, black pieces are at the bottom ("black")
-            // - If user is observing, white pieces are always at the bottom ("observer")
-            if (boardUpdateHandler != null) {
-                boardUpdateHandler.updateBoard(board, playerPerspective);
-            } else {
-                // Fallback: render directly
-                ChessBoardRenderer.render(board, playerPerspective);
+        try {
+            // Deserialize the server message using the custom deserializer
+            ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+            
+            switch (serverMessage.getServerMessageType()) {
+                case LOAD_GAME -> {
+                    ChessGame game = serverMessage.getGame();
+                    if (game == null) {
+                        System.err.println("Error: Received null game state from server");
+                        return;
+                    }
+                    
+                    ChessBoard board = game.getBoard();
+                    if (board == null) {
+                        System.err.println("Error: Game board is null");
+                        return;
+                    }
+                    
+                    if (boardUpdateHandler != null) {
+                        boardUpdateHandler.updateBoard(board, playerPerspective);
+                    } else {
+                        // Fallback: render directly
+                        ChessBoardRenderer.render(board, playerPerspective);
+                    }
+                }
+                case ERROR -> {
+                    // Display error message to user
+                    String errorMessage = serverMessage.getMessage();
+                    if (errorMessage == null) {
+                        errorMessage = "Error: Unknown error occurred";
+                    } else if (!errorMessage.toLowerCase().contains("error")) {
+                        errorMessage = "Error: " + errorMessage;
+                    }
+                    System.err.println(errorMessage);
+                }
+                case NOTIFICATION -> {
+                    // Display notification message to user
+                    String notification = serverMessage.getMessage();
+                    if (notification != null) {
+                        System.out.println(notification);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Handle any deserialization or processing errors
+            System.err.println("Error processing server message: " + e.getMessage());
+            if (e.getCause() != null) {
+                System.err.println("Caused by: " + e.getCause().getMessage());
             }
         }
-        // Handle other message types as needed
     }
 
     public void sendLeaveCommand(String authToken, int gameID) throws IOException {
