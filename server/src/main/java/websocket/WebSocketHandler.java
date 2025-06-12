@@ -117,17 +117,45 @@ public class WebSocketHandler {
             // Verify it's the player's turn
             String username = authDAO.getAuth(authToken).username();
             if (!game.whiteUsername().equals(username) && !game.blackUsername().equals(username)) {
+                sendError(session, "Error: observers cannot make moves");
+                return;
+            }
+
+            // Check if game is over
+            ChessGame chessGame = game.game();
+            if (chessGame.getTeamTurn() == null) {
+                sendError(session, "Error: game is over");
+                return;
+            }
+
+            // Verify it's the player's turn
+            ChessGame.TeamColor playerColor = game.whiteUsername().equals(username) ? 
+                ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+            if (chessGame.getTeamTurn() != playerColor) {
                 sendError(session, "Error: not your turn");
                 return;
             }
 
             // Make the move
-            ChessGame chessGame = game.game();
             try {
                 chessGame.makeMove(move);
             } catch (InvalidMoveException e) {
                 sendError(session, "Error: " + e.getMessage());
                 return;
+            }
+
+            // Check for game over conditions
+            String gameOverMessage = null;
+            if (chessGame.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+                gameOverMessage = "Game over: White is in checkmate!";
+                chessGame.setTeamTurn(null);
+            } else if (chessGame.isInCheckmate(ChessGame.TeamColor.BLACK)) {
+                gameOverMessage = "Game over: Black is in checkmate!";
+                chessGame.setTeamTurn(null);
+            } else if (chessGame.isInStalemate(ChessGame.TeamColor.WHITE) || 
+                      chessGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
+                gameOverMessage = "Game over: Stalemate!";
+                chessGame.setTeamTurn(null);
             }
 
             // Update game in database
@@ -137,10 +165,28 @@ public class WebSocketHandler {
             ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
             broadcastMessage(gameID, null, gson.toJson(loadGameMessage));
 
-            // Send notification
-            ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+            // Send move notification
+            ServerMessage moveNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
                 username + " made a move");
-            broadcastMessage(gameID, null, gson.toJson(notification));
+            broadcastMessage(gameID, null, gson.toJson(moveNotification));
+
+            // Send game over notification if applicable
+            if (gameOverMessage != null) {
+                ServerMessage gameOverNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+                    gameOverMessage);
+                broadcastMessage(gameID, null, gson.toJson(gameOverNotification));
+            }
+
+            // Send check notification if applicable
+            if (chessGame.isInCheck(ChessGame.TeamColor.WHITE)) {
+                ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+                    "White is in check!");
+                broadcastMessage(gameID, null, gson.toJson(checkNotification));
+            } else if (chessGame.isInCheck(ChessGame.TeamColor.BLACK)) {
+                ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+                    "Black is in check!");
+                broadcastMessage(gameID, null, gson.toJson(checkNotification));
+            }
         } catch (DataAccessException e) {
             sendError(session, "Error: " + e.getMessage());
         }
@@ -176,12 +222,18 @@ public class WebSocketHandler {
             // Verify player is in the game
             String username = authDAO.getAuth(authToken).username();
             if (!game.whiteUsername().equals(username) && !game.blackUsername().equals(username)) {
-                sendError(session, "Error: you are not a player in this game");
+                sendError(session, "Error: observers cannot resign");
+                return;
+            }
+
+            // Check if game is already over
+            ChessGame chessGame = game.game();
+            if (chessGame.getTeamTurn() == null) {
+                sendError(session, "Error: game is already over");
                 return;
             }
 
             // Update game state
-            ChessGame chessGame = game.game();
             chessGame.setTeamTurn(null); // Indicates game is over
             gameService.updateGame(gameID, chessGame);
 
@@ -189,7 +241,7 @@ public class WebSocketHandler {
             ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
             broadcastMessage(gameID, null, gson.toJson(loadGameMessage));
 
-            // Send notification
+            // Send resignation notification
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
                 username + " resigned the game");
             broadcastMessage(gameID, null, gson.toJson(notification));

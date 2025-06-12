@@ -91,7 +91,7 @@ public class PostloginUI {
             }
 
             int gameId = serverFacade.createGame(authToken, gameName);
-            System.out.println("Game '" + gameName);
+            System.out.println("Game '" + gameName + "' created successfully.");
         } catch (ResponseException e) {
             System.out.println("Error creating game: " + e.getMessage());
         }
@@ -157,21 +157,22 @@ public class PostloginUI {
             // Join the game
             int gameId = gameIds.get(gameNum - 1);
             serverFacade.joinGame(authToken, gameId, color);
-            ChessBoard board = serverFacade.getGameBoard(authToken, gameId);
             
             // Create and setup GameplayUI
             GameplayUI gameplayUI = new GameplayUI(scanner);
-            gameplayUI.setBoard(board);
-            gameplayUI.setPerspective(colorStr);
+            gameplayUI.setPerspective(colorStr.toLowerCase());
+            gameplayUI.setPlayerColor(color);
             gameplayUI.setAuthToken(authToken);
             gameplayUI.setGameID(gameId);
             gameplayUI.setPostloginUI(this);
 
             // Setup WebSocket connection
             WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
-            communicator.setBoardUpdateHandler((updatedBoard, perspective) -> {
-                gameplayUI.setBoard(updatedBoard);
-                gameplayUI.redrawBoard();
+            communicator.setBoardUpdateHandler(new WebsocketCommunicator.BoardUpdateHandler() {
+                @Override
+                public void updateGameState(ChessBoard board, ChessGame game, String perspective) {
+                    gameplayUI.updateGameState(board, game, perspective);
+                }
             });
             communicator.setPlayerPerspective(colorStr);
             gameplayUI.setCommunicator(communicator);
@@ -217,16 +218,19 @@ public class PostloginUI {
             
             // Create and setup GameplayUI
             GameplayUI gameplayUI = new GameplayUI(scanner);
-            gameplayUI.setPerspective("observer");
+            gameplayUI.setPerspective("white");  // Observers see from white's perspective
+            gameplayUI.setPlayerColor(null); // Observers have no color
             gameplayUI.setAuthToken(authToken);
             gameplayUI.setGameID(gameId);
             gameplayUI.setPostloginUI(this);
 
             // Setup WebSocket connection
             WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
-            communicator.setBoardUpdateHandler((updatedBoard, perspective) -> {
-                gameplayUI.setBoard(updatedBoard);
-                gameplayUI.redrawBoard();
+            communicator.setBoardUpdateHandler(new WebsocketCommunicator.BoardUpdateHandler() {
+                @Override
+                public void updateGameState(ChessBoard board, ChessGame game, String perspective) {
+                    gameplayUI.updateGameState(board, game, perspective);
+                }
             });
             communicator.setPlayerPerspective("observer");
             gameplayUI.setCommunicator(communicator);

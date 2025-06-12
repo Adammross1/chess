@@ -2,55 +2,49 @@ package server;
 
 import chess.ChessGame;
 import chess.ChessPiece;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-import com.google.gson.TypeAdapter;
-import java.io.IOException;
+import com.google.gson.*;
+import java.lang.reflect.Type;
 
-public class ChessPieceAdapter extends TypeAdapter<ChessPiece> {
-
+public class ChessPieceAdapter implements JsonSerializer<ChessPiece>, JsonDeserializer<ChessPiece> {
     @Override
-    public void write(JsonWriter out, ChessPiece value) throws IOException {
-        if (value == null) {
-            out.nullValue();
-            return;
-        }
-        out.beginObject();
-        out.name("pieceColor").value(value.getTeamColor().toString());
-        out.name("pieceType").value(value.getPieceType().toString());
-        out.endObject();
+    public JsonElement serialize(ChessPiece piece, Type type, JsonSerializationContext context) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("pieceColor", piece.getTeamColor().toString());
+        jsonObject.addProperty("pieceType", piece.getPieceType().toString());
+        return jsonObject;
     }
 
     @Override
-    public ChessPiece read(JsonReader in) throws IOException {
-        if (in.peek() == JsonToken.NULL) {
-            in.nextNull();
+    public ChessPiece deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
+        JsonObject jsonObject = json.getAsJsonObject();
+        
+        // Get piece color
+        JsonElement colorElement = jsonObject.get("pieceColor");
+        if (colorElement == null) {
             return null;
         }
-
-        ChessGame.TeamColor pieceColor = null;
-        ChessPiece.PieceType pieceType = null;
-
-        in.beginObject();
-        while (in.hasNext()) {
-            String name = in.nextName();
-            if (name.equals("pieceColor")) {
-                pieceColor = ChessGame.TeamColor.valueOf(in.nextString());
-            } else if (name.equals("pieceType")) {
-                pieceType = ChessPiece.PieceType.valueOf(in.nextString());
-            } else if (name.equals("type")) {
-                pieceType = ChessPiece.PieceType.valueOf(in.nextString());
-            } else if (name.equals("calculator")) {
-                // Skip the calculator field - it will be created by the ChessPiece constructor
-                in.skipValue();
-            }
+        ChessGame.TeamColor color;
+        try {
+            color = ChessGame.TeamColor.valueOf(colorElement.getAsString());
+        } catch (IllegalArgumentException e) {
+            return null;
         }
-        in.endObject();
-
-        if (pieceColor != null && pieceType != null) {
-            return new ChessPiece(pieceColor, pieceType);
+        
+        // Get piece type
+        JsonElement typeElement = jsonObject.get("pieceType");
+        if (typeElement == null) {
+            typeElement = jsonObject.get("type");
         }
-        return null;
+        if (typeElement == null) {
+            return null;
+        }
+        ChessPiece.PieceType pieceType;
+        try {
+            pieceType = ChessPiece.PieceType.valueOf(typeElement.getAsString());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        
+        return new ChessPiece(color, pieceType);
     }
 } 

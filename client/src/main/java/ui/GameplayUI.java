@@ -12,19 +12,53 @@ import java.util.HashSet;
 public class GameplayUI {
     private final Scanner scanner;
     private chess.ChessBoard currentBoard;
+    private chess.ChessGame currentGame;
     private String perspective = "observer";
     private server.WebsocketCommunicator communicator;
     private String authToken;
     private int gameID;
     private PostloginUI postloginUI;
     private boolean hasResigned = false;
+    private boolean gameOver = false;
+    private ChessGame.TeamColor playerColor = null;
 
     public GameplayUI(Scanner scanner) {
         this.scanner = scanner;
     }
 
     public void setBoard(chess.ChessBoard board) {
+        System.out.println("Setting board in GameplayUI");
         this.currentBoard = board;
+        if (currentBoard != null) {
+            ChessBoardRenderer.render(currentBoard, perspective);
+        } else {
+            System.out.println("Warning: Attempted to set null board");
+        }
+    }
+
+    public void setGame(chess.ChessGame game) {
+        this.currentGame = game;
+        if (currentGame != null) {
+            System.out.println("Game state updated - Team turn: " + currentGame.getTeamTurn());
+            
+            // Check for game over conditions
+            if (currentGame.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+                System.out.println("Game over: White is in checkmate");
+                gameOver = true;
+                System.out.println("Game Over: White is in checkmate!");
+            } else if (currentGame.isInCheckmate(ChessGame.TeamColor.BLACK)) {
+                System.out.println("Game over: Black is in checkmate");
+                gameOver = true;
+                System.out.println("Game Over: Black is in checkmate!");
+            } else if (currentGame.isInStalemate(ChessGame.TeamColor.WHITE) || 
+                      currentGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
+                System.out.println("Game over: Stalemate");
+                gameOver = true;
+                System.out.println("Game Over: Stalemate!");
+            }
+        } else {
+            System.out.println("Warning: Attempted to set null game");
+        }
     }
 
     public void setPerspective(String perspective) {
@@ -47,16 +81,29 @@ public class GameplayUI {
         this.postloginUI = postloginUI;
     }
 
+    public void setPlayerColor(ChessGame.TeamColor color) {
+        this.playerColor = color;
+    }
+
     public void redrawBoard() {
         if (currentBoard == null) {
             System.out.println("No board to display.");
         } else {
-            System.out.println("\nRedrawing chess board:");
             ChessBoardRenderer.render(currentBoard, perspective);
         }
     }
 
     public void handleCommand(String command) {
+        if (gameOver) {
+            switch (command.trim().toLowerCase()) {
+                case "help" -> showHelp();
+                case "redraw" -> redrawBoard();
+                case "leave" -> handleLeave();
+                default -> System.out.println("Game is over. You can only use 'help', 'redraw', or 'leave' commands.");
+            }
+            return;
+        }
+
         switch (command.trim().toLowerCase()) {
             case "help" -> showHelp();
             case "redraw" -> redrawBoard();
@@ -64,6 +111,12 @@ public class GameplayUI {
             case "move" -> {
                 if (hasResigned) {
                     System.out.println("You have resigned and cannot make moves.");
+                } else if (gameOver) {
+                    System.out.println("Game is over. No more moves can be made.");
+                } else if (playerColor == null) {
+                    System.out.println("Observers cannot make moves.");
+                } else if (currentGame != null && currentGame.getTeamTurn() != playerColor) {
+                    System.out.println("Not your turn.");
                 } else {
                     handleMakeMove();
                 }
@@ -71,6 +124,10 @@ public class GameplayUI {
             case "resign" -> {
                 if (hasResigned) {
                     System.out.println("You have already resigned.");
+                } else if (gameOver) {
+                    System.out.println("Game is already over.");
+                } else if (playerColor == null) {
+                    System.out.println("Observers cannot resign.");
                 } else {
                     handleResign();
                 }
@@ -86,10 +143,12 @@ public class GameplayUI {
         System.out.printf("%-25s | %s%n", "Command", "Description");
         System.out.println("--------------------------------------------------------------");
         System.out.printf("%-25s | %s%n", "help", "Displays text informing the user what actions they can take.");
-        System.out.printf("%-25s | %s%n", "redraw Chess Board", "Redraws the chess board upon the user's request.");
-        System.out.printf("%-25s | %s%n", "leave", "Removes the user from the game (playing or observing). Returns to Post-Login UI.");
-        System.out.printf("%-25s | %s%n", "move", "Allow the user to input what move they want to make. Board updates for all clients.");
-        System.out.printf("%-25s | %s%n", "resign", "Prompts the user to confirm resignation. Forfeits the game but does not leave.");
+        System.out.printf("%-25s | %s%n", "redraw", "Redraws the chess board upon the user's request.");
+        System.out.printf("%-25s | %s%n", "leave", "Leaves the game and returns to the main menu.");
+        if (!gameOver && playerColor != null && !hasResigned) {
+            System.out.printf("%-25s | %s%n", "move", "Allow the user to input what move they want to make. Board updates for all clients.");
+            System.out.printf("%-25s | %s%n", "resign", "Prompts the user to confirm resignation. Forfeits the game but does not leave.");
+        }
         System.out.printf("%-25s | %s%n", "highlight", "Input a piece to highlight its legal moves. Local operation only.");
         System.out.println("--------------------------------------------------------------\n");
     }
@@ -257,5 +316,43 @@ public class GameplayUI {
         }
 
         return new ChessPosition(row, column);
+    }
+
+    public void updateGameState(chess.ChessBoard board, chess.ChessGame game, String perspective) {
+        System.out.println("Setting board in GameplayUI");
+        this.currentBoard = board;
+        if (currentBoard != null) {
+            ChessBoardRenderer.render(currentBoard, perspective);
+        } else {
+            System.out.println("Warning: Attempted to set null board");
+        }
+
+        this.currentGame = game;
+        if (currentGame != null) {
+            ChessGame.TeamColor teamTurn = currentGame.getTeamTurn();
+            if (teamTurn == null) {
+                System.out.println("Game state updated - Game is over");
+            } else {
+                System.out.println("Game state updated - Team turn: " + teamTurn);
+            }
+            
+            // Check for game over conditions
+            if (currentGame.isInCheckmate(ChessGame.TeamColor.WHITE)) {
+                System.out.println("Game over: White is in checkmate");
+                gameOver = true;
+                System.out.println("Game Over: White is in checkmate!");
+            } else if (currentGame.isInCheckmate(ChessGame.TeamColor.BLACK)) {
+                System.out.println("Game over: Black is in checkmate");
+                gameOver = true;
+                System.out.println("Game Over: Black is in checkmate!");
+            } else if (currentGame.isInStalemate(ChessGame.TeamColor.WHITE) || 
+                      currentGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
+                System.out.println("Game over: Stalemate");
+                gameOver = true;
+                System.out.println("Game Over: Stalemate!");
+            }
+        } else {
+            System.out.println("Warning: Attempted to set null game");
+        }
     }
 } 

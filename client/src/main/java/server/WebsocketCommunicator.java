@@ -2,6 +2,7 @@ package server;
 
 import javax.websocket.*;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
@@ -9,9 +10,11 @@ import java.util.concurrent.TimeUnit;
 import websocket.messages.ServerMessage;
 import chess.ChessGame;
 import chess.ChessBoard;
+import chess.ChessPiece;
 import ui.ChessBoardRenderer;
 import websocket.commands.UserGameCommand;
 import chess.ChessMove;
+import chess.ChessPosition;
 
 /**
  * Manages a persistent WebSocket connection to the server for gameplay communication.
@@ -21,7 +24,7 @@ import chess.ChessMove;
 public class WebsocketCommunicator {
     private Session session;
     private final String serverUrl;
-    private final Gson gson = new Gson();
+    private final Gson gson;
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private BoardUpdateHandler boardUpdateHandler;
     private NotificationHandler notificationHandler;
@@ -31,8 +34,18 @@ public class WebsocketCommunicator {
         void onNotification(String message);
     }
 
+    public interface BoardUpdateHandler {
+        void updateGameState(ChessBoard board, ChessGame game, String perspective);
+    }
+
     public WebsocketCommunicator(String serverUrl) {
         this.serverUrl = serverUrl;
+        // Create Gson instance with our custom adapters
+        this.gson = new GsonBuilder()
+            .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
+            .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
+            .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
+            .create();
     }
 
     /**
@@ -92,7 +105,7 @@ public class WebsocketCommunicator {
     }
 
     public void setPlayerPerspective(String perspective) {
-        this.playerPerspective = perspective;
+        this.playerPerspective = perspective.toLowerCase();
     }
 
     public void setNotificationHandler(NotificationHandler handler) {
@@ -102,7 +115,7 @@ public class WebsocketCommunicator {
     @OnMessage
     public void onMessage(String message) {
         try {
-            // Deserialize the server message using the custom deserializer
+            System.out.println("[DEBUG] Received WebSocket message: " + message);
             ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
             
             switch (serverMessage.getServerMessageType()) {
@@ -113,6 +126,8 @@ public class WebsocketCommunicator {
                         return;
                     }
                     
+                    System.out.println("[DEBUG] Received game state - Team turn: " + (game.getTeamTurn() != null ? game.getTeamTurn() : "null"));
+                    
                     ChessBoard board = game.getBoard();
                     if (board == null) {
                         System.err.println("Error: Game board is null");
@@ -120,14 +135,10 @@ public class WebsocketCommunicator {
                     }
                     
                     if (boardUpdateHandler != null) {
-                        boardUpdateHandler.updateBoard(board, playerPerspective);
-                    } else {
-                        // Fallback: render directly
-                        ChessBoardRenderer.render(board, playerPerspective);
+                        boardUpdateHandler.updateGameState(board, game, playerPerspective);
                     }
                 }
                 case ERROR -> {
-                    // Display error message to user
                     String errorMessage = serverMessage.getMessage();
                     if (errorMessage == null) {
                         errorMessage = "Error: Unknown error occurred";
@@ -137,7 +148,6 @@ public class WebsocketCommunicator {
                     System.err.println(errorMessage);
                 }
                 case NOTIFICATION -> {
-                    // Display notification message to user
                     String notification = serverMessage.getMessage();
                     if (notification != null) {
                         System.out.println(notification);
@@ -148,11 +158,8 @@ public class WebsocketCommunicator {
                 }
             }
         } catch (Exception e) {
-            // Handle any deserialization or processing errors
-            System.err.println("Error processing server message: " + e.getMessage());
-            if (e.getCause() != null) {
-                System.err.println("Caused by: " + e.getCause().getMessage());
-            }
+            System.err.println("Error processing message: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
