@@ -9,6 +9,7 @@ import dataaccess.DataAccessException;
 import dataaccess.ChessGameAdapter;
 import dataaccess.ChessBoardAdapter;
 import dataaccess.ChessPieceAdapter;
+import dataaccess.GameDAO;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
@@ -27,13 +28,15 @@ public class WebSocketHandler {
     private final GameService gameService;
     private final AuthDAO authDAO;
     private final Gson gson;
+    private final GameDAO gameDAO;
     // Map of gameID to Map of authToken to Session
     private final Map<Integer, Map<String, Session>> gameSessions = new ConcurrentHashMap<>();
 
-    public WebSocketHandler(GameService gameService, AuthDAO authDAO, Gson gson) {
+    public WebSocketHandler(GameService gameService, AuthDAO authDAO, Gson gson, GameDAO gameDAO) {
         this.gameService = gameService;
         this.authDAO = authDAO;
         this.gson = gson;  // Use the passed-in Gson instance that already has the adapters registered
+        this.gameDAO = gameDAO;  // Initialize GameDAO field
     }
 
     @OnWebSocketConnect
@@ -171,10 +174,10 @@ public class WebSocketHandler {
             ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
             broadcastMessage(gameID, null, gson.toJson(loadGameMessage));
 
-            // Send move notification
+            // Send move notification only to other players
             ServerMessage moveNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
                 username + " made a move");
-            broadcastMessage(gameID, null, gson.toJson(moveNotification));
+            broadcastMessage(gameID, authToken, gson.toJson(moveNotification));
 
             // Send game over notification if applicable
             if (gameOverMessage != null) {
@@ -182,16 +185,17 @@ public class WebSocketHandler {
                     gameOverMessage);
                 broadcastMessage(gameID, null, gson.toJson(gameOverNotification));
             }
-
-            // Send check notification if applicable
-            if (chessGame.isInCheck(ChessGame.TeamColor.WHITE)) {
-                ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
-                    "White is in check");
-                broadcastMessage(gameID, null, gson.toJson(checkNotification));
-            } else if (chessGame.isInCheck(ChessGame.TeamColor.BLACK)) {
-                ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
-                    "Black is in check");
-                broadcastMessage(gameID, null, gson.toJson(checkNotification));
+            // Only send check notifications if the game is not over
+            else if (chessGame.getGameState() == ChessGame.GameState.ACTIVE) {
+                if (chessGame.isInCheck(ChessGame.TeamColor.WHITE)) {
+                    ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+                        "White is in check");
+                    broadcastMessage(gameID, null, gson.toJson(checkNotification));
+                } else if (chessGame.isInCheck(ChessGame.TeamColor.BLACK)) {
+                    ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
+                        "Black is in check");
+                    broadcastMessage(gameID, null, gson.toJson(checkNotification));
+                }
             }
         } catch (DataAccessException e) {
             sendError(session, "Error: " + e.getMessage());
@@ -200,11 +204,29 @@ public class WebSocketHandler {
 
     private void handleLeave(Session session, String authToken, int gameID, Map<String, Session> sessions) {
         try {
+            // Get game data
+            GameData game = gameService.getGame(authToken, gameID);
+            if (game == null) {
+                sendError(session, "Error: game not found");
+                return;
+            }
+
+            // Get username and determine which color to clear
+            String username = authDAO.getAuth(authToken).username();
+            String whiteUsername = game.whiteUsername();
+            String blackUsername = game.blackUsername();
+
+            // Clear the player's color spot
+            if (username.equals(whiteUsername)) {
+                gameDAO.updateGame(gameID, null, blackUsername);
+            } else if (username.equals(blackUsername)) {
+                gameDAO.updateGame(gameID, whiteUsername, null);
+            }
+
             // Remove session
             sessions.remove(authToken);
 
             // Notify others
-            String username = authDAO.getAuth(authToken).username();
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
                 username + " left the game");
             broadcastMessage(gameID, authToken, gson.toJson(notification));
@@ -262,14 +284,7 @@ public class WebSocketHandler {
             gameService.updateGame(gameID, chessGame);
             System.out.println("TEAM_TURN: After database update - " + chessGame.getTeamTurn());
 
-            // Send LOAD_GAME message to all clients
-            ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
-            String loadGameJson = gson.toJson(loadGameMessage);
-            System.out.println("TEAM_TURN: Before sending LOAD_GAME - " + chessGame.getTeamTurn());
-            System.out.println("TEAM_TURN: LOAD_GAME JSON - " + loadGameJson);
-            broadcastMessage(gameID, null, loadGameJson);
-
-            // Send resignation notification
+            // Send resignation notification to all players
             String teamColor = game.whiteUsername().equals(username) ? "White" : "Black";
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
                 teamColor + " player (" + username + ") has resigned the game");
@@ -301,7 +316,7 @@ public class WebSocketHandler {
     }
 
     private void sendError(Session session, String errorMessage) {
-        ServerMessage error = new ServerMessage(ServerMessage.ServerMessageType.ERROR, errorMessage);
+        ServerMessage error = new ServerMessage(ServerMessage.ServerMessageType.ERROR, errorMessage, true);
         sendMessage(session, gson.toJson(error));
     }
 } 

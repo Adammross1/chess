@@ -51,7 +51,7 @@ public class Server {
             userHandler = new UserHandler(userService);
             gameHandler = new GameHandler(gameService, gson);
             clearHandler = new ClearHandler(clearService);
-            webSocketHandler = new WebSocketHandler(gameService, authDAO, gson);
+            webSocketHandler = new WebSocketHandler(gameService, authDAO, gson, gameDAO);
             System.out.println("TEAM_TURN: Server - All handlers initialized with Gson instance");
         } catch (DataAccessException e) {
             throw new RuntimeException("Failed to initialize server: " + e.getMessage(), e);

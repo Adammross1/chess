@@ -8,6 +8,7 @@ import service.requests.CreateGameRequest;
 import service.requests.RegisterRequest;
 import service.results.CreateGameResult;
 import service.results.RegisterResult;
+import com.google.gson.Gson;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -18,12 +19,14 @@ public class ClearServiceTest {
     private AuthDAO authDAO;
     private UserDAO userDAO;
     private GameDAO gameDAO;
+    private Gson gson;
 
     @BeforeEach
     public void setUp() throws DataAccessException {
+        gson = new Gson();
         userDAO = new MySQLUserDAO();
         authDAO = new MySQLAuthDAO();
-        gameDAO = new MySQLGameDAO();
+        gameDAO = new MySQLGameDAO(gson);
 
         userDAO.clear();
         authDAO.clear();

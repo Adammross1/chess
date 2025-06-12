@@ -8,16 +8,19 @@ import chess.ChessPosition;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
+import com.google.gson.Gson;
 
 public class MySQLGameDAOTest {
     private MySQLGameDAO gameDAO;
     private MySQLUserDAO userDAO;
+    private Gson gson;
 
     @BeforeEach
     void setUp() throws DataAccessException {
+        gson = new Gson();
         userDAO = new MySQLUserDAO();
         userDAO.clear();
-        gameDAO = new MySQLGameDAO();
+        gameDAO = new MySQLGameDAO(gson);
         gameDAO.clear();
     }
 
