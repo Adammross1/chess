@@ -114,15 +114,12 @@ public class WebsocketCommunicator {
 
     @OnMessage
     public void onMessage(String message) {
-        System.out.println("CLIENT: Received message from server: " + message);
         try {
             ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-            System.out.println("CLIENT: Message type: " + serverMessage.getServerMessageType());
             
             switch (serverMessage.getServerMessageType()) {
                 case LOAD_GAME -> {
                     ChessGame game = serverMessage.getGame();
-                    System.out.println("CLIENT: Received game state - teamTurn: " + (game != null ? game.getTeamTurn() : "null"));
                     if (game == null) {
                         System.err.println("Error: Received null game state from server");
                         return;
@@ -158,7 +155,6 @@ public class WebsocketCommunicator {
                 }
             }
         } catch (Exception e) {
-            System.err.println("CLIENT: Error processing message: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -195,15 +191,11 @@ public class WebsocketCommunicator {
      * @throws IOException if the WebSocket send fails
      */
     public void sendResignCommand(String authToken, int gameID) throws IOException {
-        System.out.println("CLIENT: Sending resign command...");
         UserGameCommand resignCommand = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
         String json = gson.toJson(resignCommand);
-        System.out.println("CLIENT: Resign command JSON: " + json);
         if (session != null && session.isOpen()) {
             session.getBasicRemote().sendText(json);
-            System.out.println("CLIENT: Resign command sent successfully");
         } else {
-            System.out.println("CLIENT: Error - WebSocket is not connected");
             throw new IOException("WebSocket is not connected");
         }
     }

@@ -2,7 +2,10 @@ package dataaccess;
 
 import chess.ChessGame;
 import chess.ChessBoard;
+import chess.ChessMove;
+import chess.ChessPosition;
 import com.google.gson.*;
+import java.lang.reflect.Type;
 import model.GameData;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -11,7 +14,7 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
     private static final Logger LOGGER = Logger.getLogger(ChessGameAdapter.class.getName());
 
     @Override
-    public JsonElement serialize(ChessGame game, java.lang.reflect.Type type, JsonSerializationContext context) {
+    public JsonElement serialize(ChessGame game, Type type, JsonSerializationContext context) {
         LOGGER.log(Level.INFO, "TEAM_TURN: ====== Serialization START =====");
         LOGGER.log(Level.INFO, "TEAM_TURN: Game object: " + (game != null ? "not null" : "null"));
         
@@ -52,7 +55,7 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
     }
 
     @Override
-    public ChessGame deserialize(JsonElement json, java.lang.reflect.Type type, JsonDeserializationContext context) throws JsonParseException {
+    public ChessGame deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
         LOGGER.log(Level.INFO, "TEAM_TURN: ====== Deserialization START =====");
         JsonObject jsonObject = json.getAsJsonObject();
         LOGGER.log(Level.INFO, "TEAM_TURN: Raw JSON: " + jsonObject);
@@ -61,8 +64,11 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
         ChessGame game = new ChessGame();
         
         // Deserialize and set the board
-        ChessBoard board = context.deserialize(jsonObject.get("board"), ChessBoard.class);
-        game.setBoard(board);
+        JsonElement boardElement = jsonObject.get("board");
+        if (boardElement != null && !boardElement.isJsonNull()) {
+            ChessBoard board = context.deserialize(boardElement, ChessBoard.class);
+            game.setBoard(board);
+        }
         
         // Deserialize and set the team turn
         JsonElement teamTurnElement = jsonObject.get("teamTurn");
@@ -77,9 +83,20 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
         }
         
         // Deserialize and set the game state
-        String gameState = jsonObject.get("gameState").getAsString();
-        LOGGER.log(Level.INFO, "TEAM_TURN: Setting gameState from JSON: " + gameState);
-        game.setGameState(ChessGame.GameState.valueOf(gameState));
+        JsonElement gameStateElement = jsonObject.get("gameState");
+        if (gameStateElement != null && !gameStateElement.isJsonNull()) {
+            try {
+                String gameState = gameStateElement.getAsString();
+                LOGGER.log(Level.INFO, "TEAM_TURN: Setting gameState from JSON: " + gameState);
+                game.setGameState(ChessGame.GameState.valueOf(gameState));
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "TEAM_TURN: Error parsing gameState, using default ACTIVE: " + e.getMessage());
+                game.setGameState(ChessGame.GameState.ACTIVE);
+            }
+        } else {
+            LOGGER.log(Level.WARNING, "TEAM_TURN: gameState is null in JSON, setting to ACTIVE");
+            game.setGameState(ChessGame.GameState.ACTIVE);
+        }
         
         LOGGER.log(Level.INFO, "TEAM_TURN: Final game state - teamTurn: " + game.getTeamTurn() + ", gameState: " + game.getGameState());
         LOGGER.log(Level.INFO, "TEAM_TURN: ====== Deserialization END =====");
