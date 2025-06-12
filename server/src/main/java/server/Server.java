@@ -30,9 +30,18 @@ public class Server {
             // Initialize the database
             DatabaseManager.initializeDatabase();
 
+            // Create Gson instance with our custom adapters
+            System.out.println("TEAM_TURN: Server - Creating Gson instance with adapters");
+            gson = new GsonBuilder()
+                .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
+                .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
+                .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
+                .create();
+            System.out.println("TEAM_TURN: Server - Gson instance created");
+
             // Create MySQL DAOs
             UserDAO userDAO = new MySQLUserDAO();
-            GameDAO gameDAO = new MySQLGameDAO();
+            GameDAO gameDAO = new MySQLGameDAO(gson);
             AuthDAO authDAO = new MySQLAuthDAO();
 
             UserService userService = new UserService(userDAO, authDAO);
@@ -40,14 +49,10 @@ public class Server {
             ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
 
             userHandler = new UserHandler(userService);
-            gson = new GsonBuilder()
-                .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
-                .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
-                .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
-                .create();
             gameHandler = new GameHandler(gameService, gson);
             clearHandler = new ClearHandler(clearService);
             webSocketHandler = new WebSocketHandler(gameService, authDAO, gson);
+            System.out.println("TEAM_TURN: Server - All handlers initialized with Gson instance");
         } catch (DataAccessException e) {
             throw new RuntimeException("Failed to initialize server: " + e.getMessage(), e);
         }

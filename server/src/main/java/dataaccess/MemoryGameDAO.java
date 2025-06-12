@@ -57,4 +57,23 @@ public class MemoryGameDAO implements GameDAO {
 
         games.put(gameID, updatedGame);
     }
+
+    @Override
+    public void updateGameState(int gameID, chess.ChessGame updatedGame) throws DataAccessException {
+        GameData game = games.get(gameID);
+        if (game == null) {
+            throw new DataAccessException("Error: game not found");
+        }
+
+        // Create updated game with new game state
+        GameData updatedGameData = new GameData(
+                game.gameID(),
+                game.whiteUsername(),
+                game.blackUsername(),
+                game.gameName(),
+                updatedGame
+        );
+
+        games.put(gameID, updatedGameData);
+    }
 }

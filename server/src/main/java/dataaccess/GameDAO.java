@@ -44,4 +44,12 @@ public interface GameDAO {
      * @throws DataAccessException if an error occurs or game not found
      */
     void updateGame(int gameID, String whiteUsername, String blackUsername) throws DataAccessException;
+
+    /**
+     * Updates the game state for a specific game
+     * @param gameID the ID of the game to update
+     * @param updatedGame the updated ChessGame object
+     * @throws DataAccessException if the game doesn't exist or there's a database error
+     */
+    void updateGameState(int gameID, chess.ChessGame updatedGame) throws DataAccessException;
 }

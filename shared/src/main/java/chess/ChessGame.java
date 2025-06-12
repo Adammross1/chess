@@ -13,11 +13,20 @@ import java.util.Objects;
 public class ChessGame {
     private ChessBoard board;
     private TeamColor teamTurn;
+    private GameState gameState;
+
+    public enum GameState {
+        ACTIVE,
+        CHECKMATE,
+        STALEMATE,
+        RESIGNED
+    }
 
     public ChessGame() {
         this.board = new ChessBoard();
         board.resetBoard();
         this.teamTurn = TeamColor.WHITE;
+        this.gameState = GameState.ACTIVE;
     }
 
     /**
@@ -33,7 +42,26 @@ public class ChessGame {
      * @param team the team whose turn it is
      */
     public void setTeamTurn(TeamColor team) {
+        if (team == null) {
+            throw new IllegalArgumentException("Team color cannot be null");
+        }
         this.teamTurn = team;
+    }
+
+    /**
+     * @return The current state of the game
+     */
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    /**
+     * Sets the current state of the game
+     *
+     * @param state the new game state
+     */
+    public void setGameState(GameState state) {
+        this.gameState = state;
     }
 
     /**
@@ -92,6 +120,13 @@ public class ChessGame {
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
+        if (gameState != GameState.ACTIVE) {
+            if (gameState == GameState.RESIGNED) {
+                throw new InvalidMoveException("Game is over - a player has resigned");
+            }
+            throw new InvalidMoveException("Game is not active");
+        }
+
         ChessPosition startPosition = move.getStartPosition();
         ChessPosition endPosition = move.getEndPosition();
         ChessPiece piece = board.getPiece(startPosition);
@@ -120,6 +155,15 @@ public class ChessGame {
         }
 
         teamTurn = teamTurn == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
+
+        // Check for game over conditions
+        if (isInCheckmate(TeamColor.WHITE)) {
+            gameState = GameState.CHECKMATE;
+        } else if (isInCheckmate(TeamColor.BLACK)) {
+            gameState = GameState.CHECKMATE;
+        } else if (isInStalemate(TeamColor.WHITE) || isInStalemate(TeamColor.BLACK)) {
+            gameState = GameState.STALEMATE;
+        }
     }
 
     private ChessPosition findKing(TeamColor teamColor) {
@@ -241,11 +285,13 @@ public class ChessGame {
         if (!(o instanceof ChessGame chessGame)) {
             return false;
         }
-        return Objects.equals(board, chessGame.board) && teamTurn == chessGame.teamTurn;
+        return Objects.equals(board, chessGame.board) && 
+               teamTurn == chessGame.teamTurn &&
+               gameState == chessGame.gameState;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(board, teamTurn);
+        return Objects.hash(board, teamTurn, gameState);
     }
 }

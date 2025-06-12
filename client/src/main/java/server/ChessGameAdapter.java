@@ -9,8 +9,9 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
     @Override
     public JsonElement serialize(ChessGame game, Type type, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("board", context.serialize(game.getBoard()));
+        jsonObject.addProperty("board", game.getBoard().toString());
         jsonObject.addProperty("teamTurn", game.getTeamTurn().toString());
+        jsonObject.addProperty("gameState", game.getGameState().toString());
         return jsonObject;
     }
 
@@ -23,8 +24,21 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
         ChessBoard board = context.deserialize(boardElement, ChessBoard.class);
         game.setBoard(board);
         
-        String teamTurn = jsonObject.get("teamTurn").getAsString();
-        game.setTeamTurn(ChessGame.TeamColor.valueOf(teamTurn));
+        JsonElement teamTurnElement = jsonObject.get("teamTurn");
+        if (teamTurnElement != null && !teamTurnElement.isJsonNull()) {
+            String teamTurn = teamTurnElement.getAsString();
+            game.setTeamTurn(ChessGame.TeamColor.valueOf(teamTurn));
+        } else {
+            // If teamTurn is null in JSON, set it to the current player's color
+            // This ensures we always have a valid teamTurn
+            game.setTeamTurn(ChessGame.TeamColor.WHITE);
+        }
+        
+        JsonElement gameStateElement = jsonObject.get("gameState");
+        if (gameStateElement != null && !gameStateElement.isJsonNull()) {
+            String gameState = gameStateElement.getAsString();
+            game.setGameState(ChessGame.GameState.valueOf(gameState));
+        }
         
         return game;
     }

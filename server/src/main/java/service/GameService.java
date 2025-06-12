@@ -131,28 +131,8 @@ public class GameService {
      * @throws DataAccessException if the update fails
      */
     public void updateGame(int gameID, ChessGame game) throws DataAccessException {
-        LOGGER.info("Updating game state for gameID: " + gameID);
-        GameData currentGame = gameDAO.getGame(gameID);
-        if (currentGame == null) {
-            LOGGER.warning("Game not found for update: " + gameID);
-            throw new DataAccessException("Error: game not found");
-        }
-        
-        // Cast to MySQLGameDAO to use updateGameState
-        if (gameDAO instanceof MySQLGameDAO) {
-            ((MySQLGameDAO) gameDAO).updateGameState(gameID, game);
-        } else {
-            // For memory implementation, update the entire game
-            GameData updatedGame = new GameData(
-                gameID,
-                currentGame.whiteUsername(),
-                currentGame.blackUsername(),
-                currentGame.gameName(),
-                game
-            );
-            // Use the existing updateGame method for player info
-            gameDAO.updateGame(gameID, currentGame.whiteUsername(), currentGame.blackUsername());
-        }
-        LOGGER.info("Game state updated successfully for gameID: " + gameID);
+        System.out.println("TEAM_TURN: GameService updateGame - teamTurn: " + game.getTeamTurn());
+        gameDAO.updateGameState(gameID, game);
+        System.out.println("TEAM_TURN: GameService after update - teamTurn: " + game.getTeamTurn());
     }
 }

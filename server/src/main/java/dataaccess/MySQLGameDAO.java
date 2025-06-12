@@ -5,7 +5,6 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessBoard;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +15,11 @@ public class MySQLGameDAO implements GameDAO {
     private static final Logger LOGGER = Logger.getLogger(MySQLGameDAO.class.getName());
     private final Gson gson;
 
-    public MySQLGameDAO() throws DataAccessException {
+    public MySQLGameDAO(Gson gson) throws DataAccessException {
         LOGGER.info("Initializing MySQLGameDAO");
         DatabaseManager.initializeDatabase();
-        // Create Gson instance with our custom adapters
-        gson = new GsonBuilder()
-            .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
-            .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
-            .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
-            .create();
-         LOGGER.info("MySQLGameDAO initialized");
+        this.gson = gson;
+        LOGGER.info("MySQLGameDAO initialized");
     }
 
     @Override
@@ -144,10 +138,13 @@ public class MySQLGameDAO implements GameDAO {
                 LOGGER.info("SELECT statement executed for game ID: " + gameID);
                 if (rs.next()) {
                     String gameStateJson = rs.getString("game_state");
+                    System.out.println("TEAM_TURN: MySQLGameDAO getGame - Retrieved JSON: " + gameStateJson);
                     LOGGER.fine("Retrieved game state JSON for ID " + gameID + ": " + gameStateJson);
                     ChessGame game = null;
                     try {
+                        System.out.println("TEAM_TURN: MySQLGameDAO getGame - About to deserialize");
                         game = gson.fromJson(gameStateJson, ChessGame.class);
+                        System.out.println("TEAM_TURN: MySQLGameDAO getGame - Deserialized teamTurn: " + game.getTeamTurn());
                         LOGGER.fine("Deserialized game state for ID " + gameID + ": " + game);
                     } catch (Exception ex) {
                         LOGGER.severe("Error deserializing game state for ID " + gameID + ": " + ex.getMessage());
@@ -286,7 +283,11 @@ public class MySQLGameDAO implements GameDAO {
      * @throws DataAccessException if the game doesn't exist or there's a database error
      */
     public void updateGameState(int gameID, ChessGame updatedGame) throws DataAccessException {
-        LOGGER.info("Updating game state for game ID: " + gameID);
+        System.out.println("TEAM_TURN: MySQLGameDAO updateGameState - teamTurn: " + updatedGame.getTeamTurn());
+        System.out.println("TEAM_TURN: MySQLGameDAO updateGameState - About to serialize game");
+        String gameJson = gson.toJson(updatedGame);
+        System.out.println("TEAM_TURN: MySQLGameDAO updateGameState - Serialized JSON: " + gameJson);
+        
         var statement = "UPDATE game SET game_state = ? WHERE id = ?";
         Connection conn = null;
         try {
@@ -295,7 +296,7 @@ public class MySQLGameDAO implements GameDAO {
              LOGGER.info("Transaction started for updating game state for game ID: " + gameID);
 
              try (var preparedStatement = conn.prepareStatement(statement)) {
-                preparedStatement.setString(1, gson.toJson(updatedGame));
+                preparedStatement.setString(1, gameJson);
                 preparedStatement.setInt(2, gameID);
                 LOGGER.info("Executing UPDATE statement for game state, ID: " + gameID);
                 int rowsAffected = preparedStatement.executeUpdate();
@@ -336,6 +337,7 @@ public class MySQLGameDAO implements GameDAO {
                 }
             }
         }
+        System.out.println("TEAM_TURN: MySQLGameDAO after update - teamTurn: " + updatedGame.getTeamTurn());
         LOGGER.info("Finished updateGameState for ID: " + gameID);
     }
 } 

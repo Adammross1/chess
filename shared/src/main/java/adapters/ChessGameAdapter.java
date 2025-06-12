@@ -13,8 +13,9 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
         // Serialize the board
         jsonObject.add("board", context.serialize(game.getBoard()));
         
-        // Serialize the current turn
+        // Serialize the current turn and game state
         jsonObject.addProperty("teamTurn", game.getTeamTurn().toString());
+        jsonObject.addProperty("gameState", game.getGameState().toString());
         
         return jsonObject;
     }
@@ -31,8 +32,19 @@ public class ChessGameAdapter implements JsonSerializer<ChessGame>, JsonDeserial
         game.setBoard(board);
         
         // Deserialize and set the team turn
-        String teamTurn = jsonObject.get("teamTurn").getAsString();
-        game.setTeamTurn(ChessGame.TeamColor.valueOf(teamTurn));
+        JsonElement teamTurnElement = jsonObject.get("teamTurn");
+        if (teamTurnElement != null && !teamTurnElement.isJsonNull()) {
+            String teamTurn = teamTurnElement.getAsString();
+            game.setTeamTurn(ChessGame.TeamColor.valueOf(teamTurn));
+        } else {
+            // If teamTurn is null in JSON, set it to the current player's color
+            // This ensures we always have a valid teamTurn
+            game.setTeamTurn(ChessGame.TeamColor.WHITE);
+        }
+        
+        // Deserialize and set the game state
+        String gameState = jsonObject.get("gameState").getAsString();
+        game.setGameState(ChessGame.GameState.valueOf(gameState));
         
         return game;
     }

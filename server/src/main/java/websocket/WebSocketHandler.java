@@ -3,8 +3,12 @@ package websocket;
 import chess.ChessGame;
 import chess.ChessMove;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
+import dataaccess.ChessGameAdapter;
+import dataaccess.ChessBoardAdapter;
+import dataaccess.ChessPieceAdapter;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
@@ -29,7 +33,7 @@ public class WebSocketHandler {
     public WebSocketHandler(GameService gameService, AuthDAO authDAO, Gson gson) {
         this.gameService = gameService;
         this.authDAO = authDAO;
-        this.gson = gson;
+        this.gson = gson;  // Use the passed-in Gson instance that already has the adapters registered
     }
 
     @OnWebSocketConnect
@@ -53,10 +57,13 @@ public class WebSocketHandler {
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) {
+        System.out.println("WEBSOCKET: Received message: " + message);
         try {
             UserGameCommand command = gson.fromJson(message, UserGameCommand.class);
             String authToken = command.getAuthToken();
             int gameID = command.getGameID();
+
+            System.out.println("WEBSOCKET: Command type: " + command.getCommandType());
 
             // Verify auth token
             AuthData authData = authDAO.getAuth(authToken);
@@ -72,10 +79,15 @@ public class WebSocketHandler {
                 case CONNECT -> handleConnect(session, authToken, gameID, sessions);
                 case MAKE_MOVE -> handleMakeMove(session, authToken, gameID, command.getMove(), sessions);
                 case LEAVE -> handleLeave(session, authToken, gameID, sessions);
-                case RESIGN -> handleResign(session, authToken, gameID, sessions);
+                case RESIGN -> {
+                    System.out.println("WEBSOCKET: Handling resign command");
+                    handleResign(session, authToken, gameID, sessions);
+                }
                 default -> sendError(session, "Error: unknown command");
             }
         } catch (Exception e) {
+            System.out.println("WEBSOCKET: Error handling message: " + e.getMessage());
+            e.printStackTrace();
             sendError(session, "Error: " + e.getMessage());
         }
     }
@@ -123,7 +135,7 @@ public class WebSocketHandler {
 
             // Check if game is over
             ChessGame chessGame = game.game();
-            if (chessGame.getTeamTurn() == null) {
+            if (chessGame.getGameState() != ChessGame.GameState.ACTIVE) {
                 sendError(session, "Error: game is over");
                 return;
             }
@@ -146,16 +158,10 @@ public class WebSocketHandler {
 
             // Check for game over conditions
             String gameOverMessage = null;
-            if (chessGame.isInCheckmate(ChessGame.TeamColor.WHITE)) {
-                gameOverMessage = "Game over: White is in checkmate!";
-                chessGame.setTeamTurn(null);
-            } else if (chessGame.isInCheckmate(ChessGame.TeamColor.BLACK)) {
-                gameOverMessage = "Game over: Black is in checkmate!";
-                chessGame.setTeamTurn(null);
-            } else if (chessGame.isInStalemate(ChessGame.TeamColor.WHITE) || 
-                      chessGame.isInStalemate(ChessGame.TeamColor.BLACK)) {
+            if (chessGame.getGameState() == ChessGame.GameState.CHECKMATE) {
+                gameOverMessage = "Game over: " + chessGame.getTeamTurn() + " is in checkmate!";
+            } else if (chessGame.getGameState() == ChessGame.GameState.STALEMATE) {
                 gameOverMessage = "Game over: Stalemate!";
-                chessGame.setTeamTurn(null);
             }
 
             // Update game in database
@@ -180,11 +186,11 @@ public class WebSocketHandler {
             // Send check notification if applicable
             if (chessGame.isInCheck(ChessGame.TeamColor.WHITE)) {
                 ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
-                    "White is in check!");
+                    "White is in check");
                 broadcastMessage(gameID, null, gson.toJson(checkNotification));
             } else if (chessGame.isInCheck(ChessGame.TeamColor.BLACK)) {
                 ServerMessage checkNotification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
-                    "Black is in check!");
+                    "Black is in check");
                 broadcastMessage(gameID, null, gson.toJson(checkNotification));
             }
         } catch (DataAccessException e) {
@@ -228,24 +234,49 @@ public class WebSocketHandler {
 
             // Check if game is already over
             ChessGame chessGame = game.game();
-            if (chessGame.getTeamTurn() == null) {
+            System.out.println("TEAM_TURN: Initial state - " + chessGame.getTeamTurn());
+            
+            if (chessGame.getGameState() != ChessGame.GameState.ACTIVE) {
                 sendError(session, "Error: game is already over");
                 return;
             }
 
-            // Update game state
-            chessGame.setTeamTurn(null); // Indicates game is over
+            // Check if the player has already resigned
+            if (chessGame.getGameState() == ChessGame.GameState.RESIGNED) {
+                sendError(session, "Error: you have already resigned");
+                return;
+            }
+
+            // Set team turn to the resigning player's color BEFORE setting game state
+            ChessGame.TeamColor resigningColor = game.whiteUsername().equals(username) ? 
+                ChessGame.TeamColor.WHITE : ChessGame.TeamColor.BLACK;
+            System.out.println("TEAM_TURN: Setting to resigning color - " + resigningColor);
+            chessGame.setTeamTurn(resigningColor);
+            System.out.println("TEAM_TURN: After setting - " + chessGame.getTeamTurn());
+            
+            // Now set the game state
+            chessGame.setGameState(ChessGame.GameState.RESIGNED);
+            System.out.println("TEAM_TURN: After setting game state - " + chessGame.getTeamTurn());
+            
+            // Update game in database
             gameService.updateGame(gameID, chessGame);
+            System.out.println("TEAM_TURN: After database update - " + chessGame.getTeamTurn());
 
             // Send LOAD_GAME message to all clients
             ServerMessage loadGameMessage = new ServerMessage(ServerMessage.ServerMessageType.LOAD_GAME, chessGame);
-            broadcastMessage(gameID, null, gson.toJson(loadGameMessage));
+            String loadGameJson = gson.toJson(loadGameMessage);
+            System.out.println("TEAM_TURN: Before sending LOAD_GAME - " + chessGame.getTeamTurn());
+            System.out.println("TEAM_TURN: LOAD_GAME JSON - " + loadGameJson);
+            broadcastMessage(gameID, null, loadGameJson);
 
             // Send resignation notification
+            String teamColor = game.whiteUsername().equals(username) ? "White" : "Black";
             ServerMessage notification = new ServerMessage(ServerMessage.ServerMessageType.NOTIFICATION, 
-                username + " resigned the game");
+                teamColor + " player (" + username + ") has resigned the game");
             broadcastMessage(gameID, null, gson.toJson(notification));
         } catch (DataAccessException e) {
+            System.out.println("TEAM_TURN: Error during resignation - " + e.getMessage());
+            e.printStackTrace();
             sendError(session, "Error: " + e.getMessage());
         }
     }

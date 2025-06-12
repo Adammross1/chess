@@ -39,7 +39,7 @@ public class ChessBoardAdapter implements JsonSerializer<ChessBoard>, JsonDeseri
                 if (!pieceElement.isJsonNull()) {
                     ChessPiece piece = context.deserialize(pieceElement, ChessPiece.class);
                     if (piece != null) {
-                        board.addPiece(new ChessPosition(8 - row, col + 1), piece);
+                        board.addPiece(new ChessPosition(row + 1, col + 1), piece);
                     }
                 }
             }

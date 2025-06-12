@@ -9,7 +9,8 @@ public class ChessPieceAdapter implements JsonSerializer<ChessPiece>, JsonDeseri
     @Override
     public JsonElement serialize(ChessPiece piece, Type type, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("pieceColor", piece.getTeamColor().toString());
+        ChessGame.TeamColor teamColor = piece.getTeamColor();
+        jsonObject.addProperty("pieceColor", teamColor != null ? teamColor.toString() : null);
         jsonObject.addProperty("pieceType", piece.getPieceType().toString());
         return jsonObject;
     }
@@ -20,7 +21,7 @@ public class ChessPieceAdapter implements JsonSerializer<ChessPiece>, JsonDeseri
         
         // Get piece color
         JsonElement colorElement = jsonObject.get("pieceColor");
-        if (colorElement == null) {
+        if (colorElement == null || colorElement.isJsonNull()) {
             return null;
         }
         ChessGame.TeamColor color;
@@ -35,7 +36,7 @@ public class ChessPieceAdapter implements JsonSerializer<ChessPiece>, JsonDeseri
         if (typeElement == null) {
             typeElement = jsonObject.get("type");
         }
-        if (typeElement == null) {
+        if (typeElement == null || typeElement.isJsonNull()) {
             return null;
         }
         ChessPiece.PieceType pieceType;
