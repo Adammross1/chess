@@ -306,7 +306,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    public void joinGameNonexistent() throws ResponseException {
+    public void joinGameNonexistent() {
         // Try to join a non-existent game
         ResponseException exception = assertThrows(ResponseException.class, () -> 
             serverFacade.joinGame(authToken, 999, ChessGame.TeamColor.WHITE)
@@ -340,7 +340,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    public void observeGameNonexistent() throws ResponseException {
+    public void observeGameNonexistent() {
         // Try to observe a non-existent game
         ResponseException exception = assertThrows(ResponseException.class, () -> 
             serverFacade.observeGame(authToken, 999)
