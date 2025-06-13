@@ -30,14 +30,14 @@ public class GameHandler {
         LOGGER.severe("DataAccessException in GameHandler: " + e.getMessage());
         if (e.getMessage().contains("unauthorized")) {
             res.status(401);
-        } else if (e.getMessage().contains("already taken")) {
+        } else if (e.getMessage().contains("forbidden") || e.getMessage().contains("already taken")) {
             res.status(403);
             // Custom error message for already taken
             String msg = e.getMessage().toLowerCase().contains("white") ?
-                "White position is already taken, join black" :
+                "Error: White position is already taken, join black" :
                 e.getMessage().toLowerCase().contains("black") ?
-                "Black position is already taken, join white" :
-                "That position is already taken, try another color";
+                "Error: Black position is already taken, join white" :
+                "Error: That position is already taken, try another color";
             return gson.toJson(Map.of("message", msg));
         } else if (e.getMessage().contains("bad request")) {
             res.status(400);
