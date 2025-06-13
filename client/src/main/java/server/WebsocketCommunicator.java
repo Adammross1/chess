@@ -11,10 +11,8 @@ import websocket.messages.ServerMessage;
 import chess.ChessGame;
 import chess.ChessBoard;
 import chess.ChessPiece;
-import ui.ChessBoardRenderer;
 import websocket.commands.UserGameCommand;
 import chess.ChessMove;
-import chess.ChessPosition;
 
 /**
  * Manages a persistent WebSocket connection to the server for gameplay communication.
@@ -68,22 +66,6 @@ public class WebsocketCommunicator {
         }
     }
 
-    @OnOpen
-    public void onOpen(Session session) {
-        this.session = session;
-        connectLatch.countDown();
-    }
-
-    @OnError
-    public void onError(Session session, Throwable throwable) {
-        System.err.println("WebSocket error: " + throwable.getMessage());
-    }
-
-    @OnClose
-    public void onClose(Session session) {
-        System.out.println("WebSocket closed: ");
-    }
-
     /**
      * Sends a CONNECT UserGameCommand to the server.
      */
@@ -93,70 +75,12 @@ public class WebsocketCommunicator {
         session.getBasicRemote().sendText(json);
     }
 
-    /**
-     * For testing: returns true if the WebSocket is open.
-     */
-    public boolean isOpen() {
-        return session != null && session.isOpen();
-    }
-
     public void setBoardUpdateHandler(BoardUpdateHandler handler) {
         this.boardUpdateHandler = handler;
     }
 
     public void setPlayerPerspective(String perspective) {
         this.playerPerspective = perspective.toLowerCase();
-    }
-
-    public void setNotificationHandler(NotificationHandler handler) {
-        this.notificationHandler = handler;
-    }
-
-    @OnMessage
-    public void onMessage(String message) {
-        try {
-            ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-            
-            switch (serverMessage.getServerMessageType()) {
-                case LOAD_GAME -> {
-                    ChessGame game = serverMessage.getGame();
-                    if (game == null) {
-                        System.err.println("Error: Received null game state from server");
-                        return;
-                    }
-                                        
-                    ChessBoard board = game.getBoard();
-                    if (board == null) {
-                        System.err.println("Error: Game board is null");
-                        return;
-                    }
-                    
-                    if (boardUpdateHandler != null) {
-                        boardUpdateHandler.updateGameState(board, game, playerPerspective);
-                    }
-                }
-                case ERROR -> {
-                    String errorMessage = serverMessage.getMessage();
-                    if (errorMessage == null) {
-                        errorMessage = "Error: Unknown error occurred";
-                    } else if (!errorMessage.toLowerCase().contains("error")) {
-                        errorMessage = "Error: " + errorMessage;
-                    }
-                    System.err.println(errorMessage);
-                }
-                case NOTIFICATION -> {
-                    String notification = serverMessage.getMessage();
-                    if (notification != null) {
-                        System.out.println(notification);
-                        if (notificationHandler != null) {
-                            notificationHandler.onNotification(notification);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public void sendLeaveCommand(String authToken, int gameID) throws IOException {

@@ -4,7 +4,6 @@ import chess.ChessGame;
 import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
-import dataaccess.MySQLGameDAO;
 import model.AuthData;
 import model.GameData;
 import service.requests.CreateGameRequest;
@@ -84,7 +83,7 @@ public class GameService {
             }
             gameDAO.updateGame(request.gameID(), username, game.blackUsername());
              LOGGER.info("User " + username + " joined as WHITE in game ID: " + request.gameID());
-        } else if (color.equals("BLACK")) {
+        } else {
             if (game.blackUsername() != null) {
                  LOGGER.warning("Black spot already taken for game ID: " + request.gameID());
                 throw new DataAccessException("Error: already taken");
