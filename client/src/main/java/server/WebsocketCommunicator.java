@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import websocket.messages.ServerMessage;
 import chess.ChessGame;
 import chess.ChessBoard;
 import chess.ChessPiece;
@@ -25,16 +24,8 @@ public class WebsocketCommunicator {
     private final Gson gson;
     private final CountDownLatch connectLatch = new CountDownLatch(1);
     private BoardUpdateHandler boardUpdateHandler;
-    private NotificationHandler notificationHandler;
     private String playerPerspective = "observer";
 
-    public interface NotificationHandler {
-        void onNotification(String message);
-    }
-
-    public interface BoardUpdateHandler {
-        void updateGameState(ChessBoard board, ChessGame game, String perspective);
-    }
 
     public WebsocketCommunicator(String serverUrl) {
         this.serverUrl = serverUrl;
