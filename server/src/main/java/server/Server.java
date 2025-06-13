@@ -22,7 +22,6 @@ public class Server {
     private final UserHandler userHandler;
     private final GameHandler gameHandler;
     private final ClearHandler clearHandler;
-    private final Gson gson;
     private final WebSocketHandler webSocketHandler;
 
     public Server() {
@@ -32,11 +31,11 @@ public class Server {
 
             // Create Gson instance with our custom adapters
             System.out.println("TEAM_TURN: Server - Creating Gson instance with adapters");
-            gson = new GsonBuilder()
-                .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
-                .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
-                .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
-                .create();
+            Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(ChessGame.class, new ChessGameAdapter())
+                    .registerTypeAdapter(ChessBoard.class, new ChessBoardAdapter())
+                    .registerTypeAdapter(ChessPiece.class, new ChessPieceAdapter())
+                    .create();
             System.out.println("TEAM_TURN: Server - Gson instance created");
 
             // Create MySQL DAOs
