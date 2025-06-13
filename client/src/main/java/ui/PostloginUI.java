@@ -168,10 +168,10 @@ public class PostloginUI {
 
             // Setup WebSocket connection
             WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
-            communicator.setBoardUpdateHandler(new WebsocketCommunicator.BoardUpdateHandler() {
+            communicator.setBoardUpdateHandler(new server.BoardUpdateHandler() {
                 @Override
-                public void updateGameState(ChessBoard board, ChessGame game, String perspective) {
-                    gameplayUI.updateGameState(board, game, colorStr.toLowerCase());
+                public void updateBoard(chess.ChessBoard board, String perspective) {
+                    gameplayUI.updateGameState(board, null, perspective);
                 }
             });
             communicator.setPlayerPerspective(colorStr.toLowerCase());
@@ -226,13 +226,13 @@ public class PostloginUI {
 
             // Setup WebSocket connection
             WebsocketCommunicator communicator = new WebsocketCommunicator(serverFacade.getServerUrl());
-            communicator.setBoardUpdateHandler(new WebsocketCommunicator.BoardUpdateHandler() {
+            communicator.setBoardUpdateHandler(new server.BoardUpdateHandler() {
                 @Override
-                public void updateGameState(ChessBoard board, ChessGame game, String perspective) {
-                    gameplayUI.updateGameState(board, game, "white");  // Observers always see from white's perspective
+                public void updateBoard(chess.ChessBoard board, String perspective) {
+                    gameplayUI.updateGameState(board, null, "white");  // Observers always see from white's perspective
                 }
             });
-            communicator.setPlayerPerspective("white");  // Set WebSocket perspective to white for observers
+            communicator.setPlayerPerspective("white");
             gameplayUI.setCommunicator(communicator);
 
             // Connect to WebSocket and start gameplay
