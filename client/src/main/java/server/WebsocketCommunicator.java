@@ -80,8 +80,8 @@ public class WebsocketCommunicator {
     }
 
     @OnClose
-    public void onClose(Session session, CloseReason closeReason) {
-        System.out.println("WebSocket closed: " + closeReason);
+    public void onClose(Session session) {
+        System.out.println("WebSocket closed: ");
     }
 
     /**

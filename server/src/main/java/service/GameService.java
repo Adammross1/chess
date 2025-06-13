@@ -64,28 +64,33 @@ public class GameService {
         LOGGER.info("Game found with ID: " + request.gameID() + " for join attempt.");
 
         String username = authData.username();
-        if (request.playerColor() == null) {
-            // Observer: do not update players, just allow access
-            LOGGER.info("User " + username + " joined as OBSERVER in game ID: " + request.gameID());
-            return new JoinGameResult();
+        
+        // Validate team color - return 400 for null, empty, or invalid colors
+        if (request.playerColor() == null || request.playerColor().trim().isEmpty()) {
+            LOGGER.warning("Invalid team color: null or empty");
+            throw new DataAccessException("Error: bad request");
         }
-        if (request.playerColor().equalsIgnoreCase("WHITE")) {
+
+        String color = request.playerColor().toUpperCase();
+        if (!color.equals("WHITE") && !color.equals("BLACK")) {
+            LOGGER.warning("Invalid team color: " + color);
+            throw new DataAccessException("Error: bad request");
+        }
+
+        if (color.equals("WHITE")) {
             if (game.whiteUsername() != null) {
                  LOGGER.warning("White spot already taken for game ID: " + request.gameID());
                 throw new DataAccessException("Error: already taken");
             }
             gameDAO.updateGame(request.gameID(), username, game.blackUsername());
              LOGGER.info("User " + username + " joined as WHITE in game ID: " + request.gameID());
-        } else if (request.playerColor().equalsIgnoreCase("BLACK")) {
+        } else if (color.equals("BLACK")) {
             if (game.blackUsername() != null) {
                  LOGGER.warning("Black spot already taken for game ID: " + request.gameID());
                 throw new DataAccessException("Error: already taken");
             }
             gameDAO.updateGame(request.gameID(), game.whiteUsername(), username);
              LOGGER.info("User " + username + " joined as BLACK in game ID: " + request.gameID());
-        } else {
-             LOGGER.warning("Invalid player color for join attempt in game ID: " + request.gameID() + ", color: " + request.playerColor());
-            throw new DataAccessException("Error: bad request");
         }
 
         return new JoinGameResult();
